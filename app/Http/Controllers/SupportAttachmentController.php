@@ -18,6 +18,7 @@ class SupportAttachmentController extends Controller
         abort_unless($ticket && $ticket->status !== 'resolved', 404);
         $data = $request->validate(['body' => ['nullable', 'string', 'max:5000'], 'attachments' => ['required', 'array', 'min:1', 'max:5'], 'attachments.*' => ['file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:5120']]);
         $tickets->reply($ticket->id, $request->user()->id, $data['body'] ?: 'پیوست فایل', false, $attachments->store($request->file('attachments', [])));
+
         return back()->with('success', 'پیوست به تیکت اضافه شد.');
     }
 
@@ -26,6 +27,7 @@ class SupportAttachmentController extends Controller
         abort_unless(DB::table('tickets')->where('id', $ticket)->exists(), 404);
         $data = $request->validate(['body' => ['nullable', 'string', 'max:5000'], 'is_internal' => ['nullable', 'boolean'], 'attachments' => ['required', 'array', 'min:1', 'max:5'], 'attachments.*' => ['file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:5120']]);
         $tickets->reply($ticket, $request->user()->id, $data['body'] ?: 'پیوست فایل', $data['is_internal'] ?? false, $attachments->store($request->file('attachments', [])));
+
         return back()->with('success', 'پیوست ثبت شد.');
     }
 
@@ -38,6 +40,7 @@ class SupportAttachmentController extends Controller
         $files = json_decode($row->attachments ?: '[]', true) ?: [];
         $file = $files[$index] ?? null;
         abort_unless($file && Storage::disk('local')->exists($file['path']), 404);
+
         return Storage::disk('local')->download($file['path'], $file['name'] ?? 'attachment');
     }
 }

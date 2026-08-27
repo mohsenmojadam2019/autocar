@@ -19,6 +19,7 @@ class WholesaleService
             'company_name' => $data['company_name'] ?? $user->legal_name, 'tax_id' => $data['tax_id'] ?? $user->national_id,
             'updated_at' => now(), 'created_at' => DB::table('wholesale_accounts')->where('user_id', $user->id)->value('created_at') ?: now(),
         ]);
+
         return (int) DB::table('wholesale_accounts')->where('user_id', $user->id)->value('id');
     }
 
@@ -63,6 +64,7 @@ class WholesaleService
             foreach ($rows as $row) {
                 DB::table('wholesale_quote_items')->insert(['wholesale_quote_id' => $quoteId, 'product_id' => $row['product']->id, 'product_variant_id' => null, 'quantity' => $row['quantity'], 'unit_price' => $row['unit'], 'line_total' => $row['unit'] * $row['quantity'], 'created_at' => now(), 'updated_at' => now()]);
             }
+
             return $quoteId;
         });
     }

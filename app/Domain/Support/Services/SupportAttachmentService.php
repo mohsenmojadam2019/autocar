@@ -19,6 +19,7 @@ class SupportAttachmentService
             $extension = strtolower($file->extension() ?: 'bin');
             $path = 'support/'.now()->format('Ym').'/'.Str::uuid().'.'.$extension;
             Storage::disk('local')->put($path, file_get_contents($file->getRealPath()));
+
             return ['path' => $path, 'name' => $file->getClientOriginalName(), 'mime' => $file->getMimeType(), 'size' => $file->getSize()];
         })->all();
     }

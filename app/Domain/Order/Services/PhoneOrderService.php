@@ -16,14 +16,20 @@ class PhoneOrderService
 
     public function create(?int $userId, array $customer, array $lines, array $options = []): Order
     {
-        if ($lines === []) throw new RuntimeException('حداقل یک قلم سفارش لازم است.');
+        if ($lines === []) {
+            throw new RuntimeException('حداقل یک قلم سفارش لازم است.');
+        }
+
         return DB::transaction(function () use ($userId, $customer, $lines, $options): Order {
             $resolved = collect($lines)->map(function (array $line) use ($userId): array {
                 $product = Product::query()->published()->where('slug', $line['product_slug'])->firstOrFail();
                 $variant = ! empty($line['variant_sku']) ? ProductVariant::query()->where('product_id', $product->id)->where('sku', $line['variant_sku'])->firstOrFail() : null;
                 $quantity = max(1, (int) $line['quantity']);
-                if ($product->maximum_order_quantity && $quantity > $product->maximum_order_quantity) throw new RuntimeException('تعداد سفارش «'.$product->name.'» از سقف مجاز بیشتر است.');
+                if ($product->maximum_order_quantity && $quantity > $product->maximum_order_quantity) {
+                    throw new RuntimeException('تعداد سفارش «'.$product->name.'» از سقف مجاز بیشتر است.');
+                }
                 $price = $this->pricing->price($product, $variant, $quantity, $userId, false);
+
                 return compact('product', 'variant', 'quantity', 'price');
             });
             $subtotal = (int) $resolved->sum(fn (array $line) => $line['price']['final_price'] * $line['quantity']);
@@ -36,6 +42,7 @@ class PhoneOrderService
             }
             $this->reservations->reserveOrder($order, 60);
             $order->statusHistory()->create(['user_id' => auth()->id(), 'from_status' => null, 'to_status' => 'pending_payment', 'note' => 'سفارش تلفنی ایجاد شد.', 'created_at' => now()]);
+
             return $order->fresh(['items', 'statusHistory']);
         });
     }

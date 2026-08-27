@@ -12,6 +12,7 @@ class TicketService
             $number = 'TKT-'.now()->format('ymd').'-'.random_int(100000, 999999);
             $id = DB::table('tickets')->insertGetId(['number' => $number, 'user_id' => $userId, 'department' => $department, 'priority' => $priority, 'status' => 'open', 'subject' => $subject, 'first_response_due_at' => now()->addHours($priority === 'urgent' ? 2 : 8), 'created_at' => now(), 'updated_at' => now()]);
             DB::table('ticket_messages')->insert(['ticket_id' => $id, 'user_id' => $userId, 'body' => $message, 'attachments' => $attachments ? json_encode($attachments, JSON_UNESCAPED_UNICODE) : null, 'is_internal' => false, 'created_at' => now()]);
+
             return $id;
         });
     }

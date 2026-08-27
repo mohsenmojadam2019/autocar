@@ -87,6 +87,7 @@ class PricingService
         if ($promotion->max_discount !== null) {
             $discount = min($discount, (int) $promotion->max_discount);
         }
+
         return max(0, $basePrice - max(0, $discount));
     }
 }
