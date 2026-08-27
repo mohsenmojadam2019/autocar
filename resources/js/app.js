@@ -1,10 +1,7 @@
-import 'bootstrap';
-import 'bootstrap-icons/font/bootstrap-icons.css';
-
 /** Escapes text before inserting API-driven labels into suggestion markup. */
 const esc=(value='')=>String(value).replace(/[&<>'"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#039;','"':'&quot;'}[ch]));
 
-/** Boots storefront mega-menu, autocomplete, vehicle picker, gallery and admin navigation without Alpine/Livewire. */
+/** Boots storefront mega-menu, autocomplete, vehicle picker, gallery and admin navigation without Alpine/Livewire/Vite. */
 document.addEventListener('DOMContentLoaded',()=>{
     document.documentElement.classList.add('js-ready');
     const trigger=document.querySelector('[data-mega-trigger]'); const mega=document.querySelector('[data-mega-menu]');
