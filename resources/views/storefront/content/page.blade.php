@@ -1,0 +1,1 @@
+@extends('layouts.storefront') @section('title',$page->meta_title ?: $page->title) @section('meta_description',$page->meta_description ?: '') @section('content')<article class="container py-5"><div class="ac-surface p-4 p-lg-5"><h1 class="mb-4">{{ $page->title }}</h1><div class="content-body">{!! $page->body !!}</div></div></article>@endsection
