@@ -1,3 +1,4 @@
+@php($siteMenu=app(\App\Domain\Content\Services\MegaMenuService::class)->tree('main','desktop'))
 <!doctype html>
 <html lang="fa" dir="rtl">
 <head>
@@ -14,19 +15,13 @@
     <div class="container py-3"><div class="d-flex align-items-center gap-3">
         <a class="ac-brand flex-shrink-0" href="{{ route('home') }}">AUTO<span>CAR</span></a>
         <form class="header-search flex-grow-1" action="{{ route('search') }}"><i class="bi bi-search"></i><input name="q" value="{{ request('q') }}" autocomplete="off" data-search-input placeholder="نام قطعه، SKU، کد OEM یا برند را جست‌وجو کنید"><div class="search-suggestions" data-search-suggestions hidden></div></form>
-        <div class="header-actions d-flex gap-2">
-            @auth<a class="icon-btn" href="{{ route('account.dashboard') }}" aria-label="حساب"><i class="bi bi-person"></i></a>@else<a class="icon-btn" href="{{ route('login') }}" aria-label="ورود"><i class="bi bi-person"></i></a>@endauth
-            <a class="icon-btn position-relative" href="{{ route('cart.index') }}" aria-label="سبد"><i class="bi bi-bag"></i></a>
-        </div>
+        <div class="header-actions d-flex gap-2">@auth<a class="icon-btn" href="{{ route('account.dashboard') }}" aria-label="حساب"><i class="bi bi-person"></i></a>@else<a class="icon-btn" href="{{ route('login') }}" aria-label="ورود"><i class="bi bi-person"></i></a>@endauth<a class="icon-btn position-relative" href="{{ route('cart.index') }}" aria-label="سبد"><i class="bi bi-bag"></i></a></div>
     </div></div>
-    <nav class="main-nav border-top"><div class="container d-flex align-items-center gap-4 py-2">
-        <button class="btn nav-catalog-btn" type="button" data-mega-trigger><i class="bi bi-grid"></i> همه قطعات</button>
-        <a href="{{ route('search') }}">فروشگاه</a><a href="#brands">برندها</a><a href="#vehicle-picker">انتخاب خودرو</a><a href="/page/about">درباره ما</a><a href="/page/contact">تماس</a>
-    </div></nav>
-    <div class="mega-menu" data-mega-menu hidden><div class="container mega-inner"><div><h6>دسته‌بندی قطعات</h6><p>از موتور تا بدنه، برق، ترمز و مصرفی‌ها</p></div><div class="mega-links"><a href="{{ route('search') }}">همه محصولات</a><a href="{{ route('search',['q'=>'لنت']) }}">سیستم ترمز</a><a href="{{ route('search',['q'=>'فیلتر']) }}">فیلترها</a><a href="{{ route('search',['q'=>'شمع']) }}">برق و احتراق</a><a href="{{ route('search',['q'=>'جلوبندی']) }}">تعلیق و جلوبندی</a></div></div></div>
+    <nav class="main-nav border-top"><div class="container d-flex align-items-center gap-4 py-2"><button class="btn nav-catalog-btn" type="button" data-mega-trigger aria-expanded="false"><i class="bi bi-grid"></i> همه قطعات</button><a href="{{ route('search') }}">فروشگاه</a><a href="{{ route('home') }}#brands">برندها</a><a href="{{ route('home') }}#vehicle-picker">انتخاب خودرو</a><a href="/page/about">درباره ما</a><a href="/page/contact">تماس</a></div></nav>
+    <div class="mega-menu" data-mega-menu hidden><div class="container mega-dynamic">@forelse($siteMenu as $item)<div class="mega-column"><a class="mega-title" href="{{ $item->url ?: '#' }}">@if($item->icon)<i class="{{ $item->icon }}"></i>@endif {{ $item->title }}</a>@foreach($item->children as $child)<a href="{{ $child->url ?: '#' }}">{{ $child->title }}</a>@endforeach</div>@empty<div class="mega-empty"><b>مگامنو آماده مدیریت است</b><span>از پنل مدیریت، دسته‌ها و لینک‌های اصلی را به منوی main اضافه کنید.</span></div>@endforelse</div></div>
 </header>
 @if(session('success'))<div class="container mt-3"><div class="alert alert-success">{{ session('success') }}</div></div>@endif
 @if($errors->any())<div class="container mt-3"><div class="alert alert-danger"><ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div></div>@endif
 <main>@yield('content')</main>
-<footer class="site-footer mt-5"><div class="container py-5"><div class="row g-4"><div class="col-lg-4"><div class="ac-brand mb-3">AUTO<span>CAR</span></div><p>فروشگاه تخصصی قطعات خودرو با تمرکز بر اصالت، کد فنی و سازگاری دقیق با خودرو.</p></div><div class="col-6 col-lg-2"><h6>خرید</h6><a href="{{ route('search') }}">قطعات</a><a href="{{ route('cart.index') }}">سبد خرید</a></div><div class="col-6 col-lg-2"><h6>خدمات</h6><a href="#vehicle-picker">گاراژ خودرو</a><a href="/page/returns">مرجوعی</a></div><div class="col-lg-4"><h6>پشتیبانی</h6><p>برای انتخاب قطعه، کد OEM یا مدل دقیق خودرو را آماده داشته باشید.</p></div></div></div></footer>
+<footer class="site-footer mt-5"><div class="container py-5"><div class="row g-4"><div class="col-lg-4"><div class="ac-brand mb-3">AUTO<span>CAR</span></div><p>فروشگاه تخصصی قطعات خودرو با تمرکز بر اصالت، کد فنی و سازگاری دقیق با خودرو.</p></div><div class="col-6 col-lg-2"><h6>خرید</h6><a href="{{ route('search') }}">قطعات</a><a href="{{ route('cart.index') }}">سبد خرید</a></div><div class="col-6 col-lg-2"><h6>خدمات</h6><a href="{{ route('home') }}#vehicle-picker">گاراژ خودرو</a><a href="/page/returns">مرجوعی</a></div><div class="col-lg-4"><h6>پشتیبانی</h6><p>برای انتخاب قطعه، کد OEM یا مدل دقیق خودرو را آماده داشته باشید.</p></div></div></div></footer>
 </body></html>

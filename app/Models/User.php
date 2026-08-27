@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Domain\Customer\Models\Address;
 use App\Domain\Vehicle\Models\CustomerVehicle;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -42,9 +43,19 @@ class User extends Authenticatable
         return $this->hasMany(CustomerVehicle::class);
     }
 
+    /** Returns saved billing/shipping addresses owned by this customer. */
+    public function addresses(): HasMany
+    {
+        return $this->hasMany(Address::class)->orderByDesc('is_default')->latest('id');
+    }
+
     /** Checks a granular permission through currently assigned roles. */
     public function hasPermission(string $permission): bool
     {
+        if ($this->roles()->where('slug', 'super-admin')->exists()) {
+            return true;
+        }
+
         return $this->roles()->whereHas('permissions', fn ($query) => $query->where('slug', $permission))->exists();
     }
 
