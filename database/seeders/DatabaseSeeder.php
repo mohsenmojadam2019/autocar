@@ -10,16 +10,14 @@ class DatabaseSeeder extends Seeder
 {
     use WithoutModelEvents;
 
-    /**
-     * Seed the application's database.
-     */
+    /** Seeds deterministic development data without creating production credentials. */
     public function run(): void
     {
-        // User::factory(10)->create();
+        $this->call([CatalogSeeder::class, VehicleSeeder::class]);
 
         User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+            'name' => 'AutoCar Admin',
+            'email' => 'admin@autocar.local',
         ]);
     }
 }

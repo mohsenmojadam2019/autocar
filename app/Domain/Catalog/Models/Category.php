@@ -32,6 +32,12 @@ class Category extends Model
         return $this->hasMany(self::class, 'parent_id')->orderBy('position');
     }
 
+    /** Returns attributes attached to this category's technical specification template. */
+    public function attributes(): BelongsToMany
+    {
+        return $this->belongsToMany(Attribute::class)->withPivot(['is_required', 'position']);
+    }
+
     /** Returns every product assigned to this category. */
     public function products(): BelongsToMany
     {
@@ -42,5 +48,17 @@ class Category extends Model
     public function scopeVisible(Builder $query): Builder
     {
         return $query->where('is_active', true);
+    }
+
+    /** Builds a human-readable breadcrumb path by walking ancestors to the root. */
+    public function breadcrumb(): array
+    {
+        $items = [];
+        $cursor = $this;
+        while ($cursor) {
+            array_unshift($items, ['name' => $cursor->name, 'slug' => $cursor->slug]);
+            $cursor = $cursor->parent()->first();
+        }
+        return $items;
     }
 }
