@@ -33,6 +33,13 @@ class AppServiceProvider extends ServiceProvider
                 ]);
             })->name('assets.css');
 
+            Route::get('/assets/extensions.css', function (): Response {
+                return response((string) file_get_contents(resource_path('css/extensions.css')), 200, [
+                    'Content-Type' => 'text/css; charset=UTF-8',
+                    'Cache-Control' => 'public, max-age=86400',
+                ]);
+            })->name('assets.extensions.css');
+
             Route::get('/assets/app.js', function (): Response {
                 $javascript = (string) file_get_contents(resource_path('js/app.js'));
 
