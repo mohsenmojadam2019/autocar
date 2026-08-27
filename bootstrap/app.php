@@ -5,6 +5,7 @@ use App\Http\Middleware\EnforceMaintenanceMode;
 use App\Http\Middleware\NormalizeJalaliDates;
 use App\Http\Middleware\RequirePermission;
 use App\Http\Middleware\SecurityHeaders;
+use App\Http\Middleware\SeoRedirect;
 use App\Http\Middleware\TrackUserDevice;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -12,24 +13,16 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 
 return Application::configure(basePath: dirname(__DIR__))
-    ->withRouting(
-        web: __DIR__.'/../routes/web.php',
-        api: __DIR__.'/../routes/api.php',
-        commands: __DIR__.'/../routes/console.php',
-        health: '/up',
-    )
+    ->withRouting(web: __DIR__.'/../routes/web.php', api: __DIR__.'/../routes/api.php', commands: __DIR__.'/../routes/console.php', health: '/up')
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->alias([
-            'permission' => RequirePermission::class,
-        ]);
+        $middleware->alias(['permission' => RequirePermission::class]);
         $middleware->appendToGroup('web', NormalizeJalaliDates::class);
         $middleware->appendToGroup('web', EnforceMaintenanceMode::class);
         $middleware->appendToGroup('web', TrackUserDevice::class);
         $middleware->appendToGroup('web', AdminSecurityGate::class);
+        $middleware->appendToGroup('web', SeoRedirect::class);
         $middleware->append(SecurityHeaders::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->shouldRenderJsonWhen(
-            fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
-        );
+        $exceptions->shouldRenderJsonWhen(fn (Request $request) => $request->is('api/*') || $request->expectsJson());
     })->create();
