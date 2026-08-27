@@ -15,6 +15,12 @@ class Category extends Model
 
     protected $guarded = [];
 
+    /** Uses slug, never a numeric id, for category route-model binding. */
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
     protected function casts(): array
     {
         return ['is_active' => 'boolean'];

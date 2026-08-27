@@ -18,6 +18,12 @@ class Product extends Model
 
     protected $guarded = [];
 
+    /** Uses the immutable public slug for every implicit route-model binding. */
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
     protected function casts(): array
     {
         return [

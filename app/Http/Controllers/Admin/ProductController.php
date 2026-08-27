@@ -34,41 +34,50 @@ class ProductController extends Controller
         return view('admin.products.form', ['product' => new Product(), 'brands' => Brand::query()->orderBy('name')->get(), 'categories' => Category::query()->orderBy('name')->get()]);
     }
 
-    /** Stores a product with authoritative SKU/slug validation and category assignments. */
+    /** Stores a product and resolves category membership exclusively from category slugs. */
     public function store(Request $request): RedirectResponse
     {
         $data = $this->validated($request);
-        $categories = $data['categories'] ?? [];
+        $categorySlugs = $data['categories'] ?? [];
         unset($data['categories']);
         $data['slug'] = $data['slug'] ?: Str::slug($data['name']);
         $product = Product::query()->create($data);
-        $product->categories()->sync($categories);
+        $this->syncCategoriesBySlug($product, $categorySlugs);
+
         return redirect()->route('admin.products.edit', $product)->with('success', 'محصول ایجاد شد.');
     }
 
-    /** Shows one product edit form. */
+    /** Shows one slug-bound product edit form. */
     public function edit(Product $product): View
     {
         $product->load('categories');
         return view('admin.products.form', ['product' => $product, 'brands' => Brand::query()->orderBy('name')->get(), 'categories' => Category::query()->orderBy('name')->get()]);
     }
 
-    /** Updates the product and resynchronizes category membership. */
+    /** Updates a slug-bound product and category membership. */
     public function update(Request $request, Product $product): RedirectResponse
     {
         $data = $this->validated($request, $product->id);
-        $categories = $data['categories'] ?? [];
+        $categorySlugs = $data['categories'] ?? [];
         unset($data['categories']);
         $product->update($data);
-        $product->categories()->sync($categories);
+        $this->syncCategoriesBySlug($product, $categorySlugs);
+
         return back()->with('success', 'محصول ذخیره شد.');
     }
 
-    /** Deep-clones a complete product into draft state. */
+    /** Deep-clones a complete slug-bound product into draft state. */
     public function duplicate(Product $product, ProductCloneService $cloner): RedirectResponse
     {
         $copy = $cloner->clone($product);
         return redirect()->route('admin.products.edit', $copy)->with('success', 'کپی محصول ساخته شد.');
+    }
+
+    /** Resolves category slugs to internal foreign keys only inside the persistence boundary. */
+    private function syncCategoriesBySlug(Product $product, array $slugs): void
+    {
+        $ids = Category::query()->whereIn('slug', array_values(array_unique($slugs)))->pluck('id')->all();
+        $product->categories()->sync($ids);
     }
 
     /** Centralizes product validation shared by create and update operations. */
@@ -93,7 +102,7 @@ class ProductController extends Controller
             'compare_at_price' => ['nullable', 'integer', 'min:0'],
             'wholesale_price' => ['nullable', 'integer', 'min:0'],
             'categories' => ['nullable', 'array'],
-            'categories.*' => ['integer', 'exists:categories,id'],
+            'categories.*' => ['string', 'max:190', 'distinct', 'exists:categories,slug'],
         ]);
     }
 }
