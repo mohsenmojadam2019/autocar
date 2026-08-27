@@ -1,6 +1,10 @@
 <?php
 
+use App\Http\Controllers\Admin\FinancialOperationsController;
+use App\Http\Controllers\Admin\OperationsHealthController;
 use App\Http\Controllers\Admin\OrderCompletionController;
+use App\Http\Controllers\Admin\ProviderSettingsController;
+use App\Http\Controllers\Admin\OperationsController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin')->name('admin.')->middleware('auth')->group(function (): void {
@@ -10,4 +14,20 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function (): v
     Route::get('/orders/{order}/packing-slip', [OrderCompletionController::class, 'packing'])->middleware('permission:orders.view')->name('orders.packing');
     Route::get('/orders/{order}/thermal-receipt', [OrderCompletionController::class, 'thermal'])->middleware('permission:orders.view')->name('orders.thermal');
     Route::get('/fulfillment/shipments/{shipment}/label', [OrderCompletionController::class, 'label'])->middleware('permission:orders.manage')->name('shipping.label');
+
+    Route::prefix('providers')->name('providers.')->middleware('permission:settings.manage')->group(function (): void {
+        Route::get('/', [ProviderSettingsController::class, 'index'])->name('index');
+        Route::post('/payment', [ProviderSettingsController::class, 'payment'])->name('payment');
+        Route::post('/sms', [ProviderSettingsController::class, 'sms'])->name('sms');
+        Route::post('/health', [ProviderSettingsController::class, 'health'])->name('health');
+    });
+    Route::prefix('operations-health')->name('operations-health.')->middleware('permission:security.manage')->group(function (): void {
+        Route::get('/', [OperationsHealthController::class, 'index'])->name('index');
+        Route::post('/backup', [OperationsHealthController::class, 'backup'])->name('backup');
+        Route::post('/health', [OperationsHealthController::class, 'health'])->name('health');
+    });
+    Route::post('/payments/{transaction}/reconcile', [FinancialOperationsController::class, 'reconcile'])->middleware('permission:orders.refund')->name('payments.reconcile');
+    Route::post('/payments/{transaction}/refund', [FinancialOperationsController::class, 'refund'])->middleware('permission:orders.refund')->name('payments.refund');
+    Route::get('/reports/sales.xls', [OperationsController::class, 'salesExcel'])->middleware('permission:reports.export')->name('reports.excel');
+    Route::get('/reports/summary.pdf', [OperationsController::class, 'reportPdf'])->middleware('permission:reports.export')->name('reports.pdf');
 });
