@@ -312,7 +312,7 @@ return new class extends Migration
             $table->unsignedInteger('latency_ms')->nullable();
             $table->text('message')->nullable();
             $table->timestamp('checked_at');
-            $table->index(['provider_type', 'provider_name', 'checked_at']);
+            $table->index(['provider_type', 'provider_name', 'checked_at'], 'provider_health_lookup');
         });
 
         Schema::create('backup_runs', function (Blueprint $table): void {
