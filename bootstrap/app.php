@@ -1,8 +1,11 @@
 <?php
 
+use App\Http\Middleware\AdminSecurityGate;
+use App\Http\Middleware\EnforceMaintenanceMode;
 use App\Http\Middleware\NormalizeJalaliDates;
 use App\Http\Middleware\RequirePermission;
 use App\Http\Middleware\SecurityHeaders;
+use App\Http\Middleware\TrackUserDevice;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -20,6 +23,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => RequirePermission::class,
         ]);
         $middleware->appendToGroup('web', NormalizeJalaliDates::class);
+        $middleware->appendToGroup('web', EnforceMaintenanceMode::class);
+        $middleware->appendToGroup('web', TrackUserDevice::class);
+        $middleware->appendToGroup('web', AdminSecurityGate::class);
         $middleware->append(SecurityHeaders::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

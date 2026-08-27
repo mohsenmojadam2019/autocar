@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Domain\Sms\Services\SmsService;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\Identity\OtpService;
@@ -18,8 +19,8 @@ class PasswordRecoveryController extends Controller
         return view('auth.forgot-password');
     }
 
-    /** Issues a password-reset OTP without revealing whether arbitrary numbers exist. */
-    public function requestOtp(Request $request, OtpService $otp): RedirectResponse
+    /** Issues a reset OTP and queues SMS without disclosing whether arbitrary numbers exist. */
+    public function requestOtp(Request $request, OtpService $otp, SmsService $sms): RedirectResponse
     {
         $data = $request->validate(['mobile' => ['required', 'regex:/^09\d{9}$/']]);
         $user = User::query()->where('mobile', $data['mobile'])->where('is_active', true)->first();
@@ -27,9 +28,12 @@ class PasswordRecoveryController extends Controller
             $code = $otp->issue($data['mobile'], 'password_reset');
             if (app()->isLocal()) {
                 $request->session()->flash('development_otp', $code);
+            } else {
+                $sms->queue($data['mobile'], 'کد بازیابی رمز اتوکار: '.$code, $user->id, 'password_reset');
             }
         }
         $request->session()->put('password_reset_mobile', $data['mobile']);
+
         return back()->with('otp_requested', true)->with('status', 'اگر شماره در سامانه فعال باشد، کد بازیابی ارسال می‌شود.');
     }
 
@@ -43,6 +47,7 @@ class PasswordRecoveryController extends Controller
         $user = User::query()->where('mobile', $data['mobile'])->where('is_active', true)->firstOrFail();
         $user->update(['password' => Hash::make($data['password'])]);
         $request->session()->forget('password_reset_mobile');
+
         return redirect()->route('login')->with('success', 'رمز عبور تغییر کرد.');
     }
 }

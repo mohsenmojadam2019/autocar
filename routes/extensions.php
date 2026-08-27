@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\BannerController as AdminBannerController;
 use App\Http\Controllers\Admin\ProductWorkbenchController;
 use App\Http\Controllers\Admin\PromotionController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Auth\TwoFactorController;
 use App\Http\Controllers\Customer\BillingProfileController;
 use App\Http\Controllers\Customer\ProfileController;
 use App\Http\Controllers\Storefront\BannerInteractionController;
@@ -12,12 +13,8 @@ use App\Http\Controllers\Storefront\CheckoutController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/brand/{brand}', [CatalogController::class, 'brand'])->name('brand.show');
-Route::post('/banners/{banner}/impression', [BannerInteractionController::class, 'impression'])
-    ->middleware('throttle:120,1')
-    ->name('banners.impression');
-Route::get('/banners/{banner}/click', [BannerInteractionController::class, 'click'])
-    ->middleware('throttle:60,1')
-    ->name('banners.click');
+Route::post('/banners/{banner}/impression', [BannerInteractionController::class, 'impression'])->middleware('throttle:120,1')->name('banners.impression');
+Route::get('/banners/{banner}/click', [BannerInteractionController::class, 'click'])->middleware('throttle:60,1')->name('banners.click');
 
 Route::middleware('guest')->group(function (): void {
     Route::get('/register', [RegisterController::class, 'create'])->name('register');
@@ -25,6 +22,8 @@ Route::middleware('guest')->group(function (): void {
 });
 
 Route::middleware('auth')->group(function (): void {
+    Route::get('/two-factor/challenge', [TwoFactorController::class, 'challenge'])->name('2fa.challenge');
+    Route::post('/two-factor/challenge', [TwoFactorController::class, 'verifyChallenge'])->middleware('throttle:10,1')->name('2fa.verify');
     Route::get('/checkout/shipping-rates', [CheckoutController::class, 'shippingRates'])->name('checkout.shipping-rates');
 
     Route::prefix('account')->name('account.')->group(function (): void {
@@ -34,19 +33,16 @@ Route::middleware('auth')->group(function (): void {
         Route::post('/billing-profiles', [BillingProfileController::class, 'store'])->name('billing.store');
         Route::put('/billing-profiles/{profile}', [BillingProfileController::class, 'update'])->name('billing.update');
         Route::delete('/billing-profiles/{profile}', [BillingProfileController::class, 'destroy'])->name('billing.destroy');
+        Route::get('/security/two-factor', [TwoFactorController::class, 'setup'])->name('2fa.setup');
+        Route::post('/security/two-factor', [TwoFactorController::class, 'confirm'])->middleware('throttle:10,1')->name('2fa.confirm');
+        Route::delete('/security/two-factor', [TwoFactorController::class, 'disable'])->name('2fa.disable');
     });
 });
 
 Route::prefix('admin')->name('admin.')->middleware('auth')->group(function (): void {
-    Route::post('/promotions/automatic', [PromotionController::class, 'storeAutomatic'])
-        ->middleware('permission:marketing.manage')
-        ->name('promotions.automatic.store');
-    Route::patch('/promotions/automatic/{promotion}/toggle', [PromotionController::class, 'toggleAutomatic'])
-        ->middleware('permission:marketing.manage')
-        ->name('promotions.automatic.toggle');
-    Route::delete('/promotions/automatic/{promotion}', [PromotionController::class, 'destroyAutomatic'])
-        ->middleware('permission:marketing.manage')
-        ->name('promotions.automatic.destroy');
+    Route::post('/promotions/automatic', [PromotionController::class, 'storeAutomatic'])->middleware('permission:marketing.manage')->name('promotions.automatic.store');
+    Route::patch('/promotions/automatic/{promotion}/toggle', [PromotionController::class, 'toggleAutomatic'])->middleware('permission:marketing.manage')->name('promotions.automatic.toggle');
+    Route::delete('/promotions/automatic/{promotion}', [PromotionController::class, 'destroyAutomatic'])->middleware('permission:marketing.manage')->name('promotions.automatic.destroy');
 
     Route::prefix('products/{product}/workbench')->name('products.workbench.')->middleware('permission:catalog.manage')->group(function (): void {
         Route::get('/', [ProductWorkbenchController::class, 'show'])->name('show');

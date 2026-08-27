@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Domain\Sms\Services\SmsService;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\Audit\AuditLogger;
@@ -39,14 +40,15 @@ class LoginController extends Controller
         RateLimiter::clear($key);
         Auth::login($user, true);
         $request->session()->regenerate();
+        $request->session()->forget('two_factor_verified_at');
         $user->forceFill(['last_login_at' => now(), 'last_login_ip' => $request->ip()])->save();
         $audit->log('auth.login.password', $user);
 
         return redirect()->intended(route('home'));
     }
 
-    /** Issues a throttled login OTP; the SMS transport is connected through BE-036. */
-    public function requestOtp(Request $request, OtpService $otp): RedirectResponse
+    /** Issues a throttled login OTP and queues its real SMS delivery outside local development. */
+    public function requestOtp(Request $request, OtpService $otp, SmsService $sms): RedirectResponse
     {
         $data = $request->validate(['mobile' => ['required', 'regex:/^09\d{9}$/']]);
         $user = User::query()->where('mobile', $data['mobile'])->where('is_active', true)->first();
@@ -58,6 +60,8 @@ class LoginController extends Controller
         $request->session()->put('otp_mobile', $data['mobile']);
         if (app()->isLocal()) {
             $request->session()->flash('development_otp', $code);
+        } else {
+            $sms->queue($data['mobile'], 'کد ورود اتوکار: '.$code, $user->id, 'otp_login');
         }
 
         return back()->with('otp_requested', true);
@@ -74,6 +78,7 @@ class LoginController extends Controller
         $user = User::query()->where('mobile', $data['mobile'])->where('is_active', true)->firstOrFail();
         Auth::login($user, true);
         $request->session()->regenerate();
+        $request->session()->forget('two_factor_verified_at');
         $user->forceFill(['last_login_at' => now(), 'last_login_ip' => $request->ip()])->save();
         $audit->log('auth.login.otp', $user);
 
@@ -86,6 +91,7 @@ class LoginController extends Controller
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
         return redirect()->route('home');
     }
 }
