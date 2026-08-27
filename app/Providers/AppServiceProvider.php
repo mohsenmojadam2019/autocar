@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use App\Support\JalaliDate;
+use Carbon\CarbonInterface;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Symfony\Component\HttpFoundation\Response;
@@ -11,12 +14,16 @@ class AppServiceProvider extends ServiceProvider
     /** Registers application services. */
     public function register(): void
     {
-        // Domain services are resolved through Laravel's container conventions.
+        $this->app->singleton(JalaliDate::class);
     }
 
-    /** Registers extension routes plus framework-free AutoCar asset endpoints. */
+    /** Registers Jalali presentation, extension routes and framework-free AutoCar asset endpoints. */
     public function boot(): void
     {
+        Blade::stringable(function (CarbonInterface $date): string {
+            return app(JalaliDate::class)->format($date);
+        });
+
         Route::middleware('web')->group(base_path('routes/extensions.php'));
 
         Route::middleware('web')->group(function (): void {
@@ -41,9 +48,7 @@ class AppServiceProvider extends ServiceProvider
             })->name('assets.extensions.css');
 
             Route::get('/assets/app.js', function (): Response {
-                $javascript = (string) file_get_contents(resource_path('js/app.js'));
-
-                return response($javascript, 200, [
+                return response((string) file_get_contents(resource_path('js/app.js')), 200, [
                     'Content-Type' => 'application/javascript; charset=UTF-8',
                     'Cache-Control' => 'public, max-age=86400',
                 ]);

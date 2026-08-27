@@ -2,12 +2,13 @@
 
 namespace App\Domain\Order\Models;
 
+use App\Domain\Customer\Models\BillingProfile;
+use App\Domain\Order\Enums\OrderStatus;
 use App\Domain\Payment\Models\PaymentTransaction;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Domain\Order\Enums\OrderStatus;
 
 class Order extends Model
 {
@@ -19,6 +20,7 @@ class Order extends Model
             'status' => OrderStatus::class,
             'billing_address' => 'array',
             'shipping_address' => 'array',
+            'billing_profile_snapshot' => 'array',
             'paid_at' => 'datetime',
             'completed_at' => 'datetime',
             'cancelled_at' => 'datetime',
@@ -29,6 +31,12 @@ class Order extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /** Returns the mutable source billing profile; historical documents use the stored snapshot instead. */
+    public function billingProfile(): BelongsTo
+    {
+        return $this->belongsTo(BillingProfile::class);
     }
 
     /** Returns immutable line-item snapshots. */
@@ -49,7 +57,7 @@ class Order extends Model
         return $this->hasMany(PaymentTransaction::class);
     }
 
-    /** Returns invoice records without requiring a dedicated public identifier. */
+    /** Returns issued invoice documents. */
     public function invoices(): HasMany
     {
         return $this->hasMany(\App\Domain\Invoice\Models\Invoice::class);

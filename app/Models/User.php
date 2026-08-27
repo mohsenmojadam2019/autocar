@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Domain\Customer\Models\Address;
+use App\Domain\Customer\Models\BillingProfile;
 use App\Domain\Vehicle\Models\CustomerVehicle;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -13,7 +14,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'mobile', 'password', 'is_active'])]
+#[Fillable([
+    'name', 'email', 'mobile', 'password', 'is_active', 'account_type', 'national_code',
+    'legal_name', 'national_id', 'economic_code', 'registration_number',
+])]
 #[Hidden(['password', 'remember_token', 'two_factor_secret'])]
 class User extends Authenticatable
 {
@@ -43,10 +47,16 @@ class User extends Authenticatable
         return $this->hasMany(CustomerVehicle::class);
     }
 
-    /** Returns saved billing/shipping addresses owned by this customer. */
+    /** Returns saved shipping addresses owned by this customer. */
     public function addresses(): HasMany
     {
         return $this->hasMany(Address::class)->orderByDesc('is_default')->latest('id');
+    }
+
+    /** Returns reusable natural/legal identities available for invoice issuance. */
+    public function billingProfiles(): HasMany
+    {
+        return $this->hasMany(BillingProfile::class)->orderByDesc('is_default')->latest('id');
     }
 
     /** Checks a granular permission through currently assigned roles. */

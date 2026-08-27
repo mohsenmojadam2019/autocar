@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\NormalizeJalaliDates;
 use App\Http\Middleware\RequirePermission;
 use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
@@ -18,7 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'permission' => RequirePermission::class,
         ]);
-
+        $middleware->appendToGroup('web', NormalizeJalaliDates::class);
         $middleware->append(SecurityHeaders::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
