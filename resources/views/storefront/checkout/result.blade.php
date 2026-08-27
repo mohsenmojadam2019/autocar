@@ -1,0 +1,3 @@
+@extends('layouts.storefront')
+@section('title','نتیجه پرداخت | اتوکار')
+@section('content')<div class="container py-5"><div class="result-card ac-surface text-center"><div class="result-icon {{ $order->paid_at?'success':'pending' }}"><i class="bi {{ $order->paid_at?'bi-check-lg':'bi-clock-history' }}"></i></div><h1>{{ $order->paid_at?'پرداخت با موفقیت تأیید شد':'وضعیت پرداخت نهایی نشده است' }}</h1><p>شماره سفارش: <b>{{ $order->number }}</b></p><p>وضعیت: {{ $order->status->value }}</p><strong class="result-total">{{ number_format($order->grand_total) }} ریال</strong><div class="mt-4"><a class="btn btn-dark" href="{{ route('account.dashboard') }}">مشاهده سفارش‌ها</a></div></div></div>@endsection
