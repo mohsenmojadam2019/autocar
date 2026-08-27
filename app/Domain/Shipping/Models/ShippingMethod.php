@@ -20,6 +20,6 @@ class ShippingMethod extends Model
             return 0;
         }
 
-return (int) $this->base_price + (int) ceil(max(0, $weightGrams) / 1000) * (int) $this->price_per_kg;
+        return (int) $this->base_price + (int) ceil(max(0, $weightGrams) / 1000) * (int) $this->price_per_kg;
     }
 }

@@ -25,6 +25,6 @@ class SeoService
             $records[] = ['loc' => url('/page/'.$row->slug), 'lastmod' => $row->updated_at];
         }
 
-return $records;
+        return $records;
     }
 }

@@ -34,6 +34,6 @@ class OrderController extends Controller
         abort_unless($next, 422);
         $service->transition($order, $next, $data['note'] ?? null);
 
-        return back()->with('success','وضعیت سفارش تغییر کرد.');
+        return back()->with('success', 'وضعیت سفارش تغییر کرد.');
     }
 }
