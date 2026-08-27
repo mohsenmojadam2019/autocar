@@ -22,6 +22,7 @@ class FinancialOperationsController extends Controller
         } catch (\Throwable $exception) {
             return back()->withErrors(['reconcile' => 'Reconcile ناموفق بود: '.$exception->getMessage()]);
         }
+
         return back()->with('success', 'وضعیت تراکنش با Provider تطبیق داده شد.');
     }
 
@@ -40,6 +41,7 @@ class FinancialOperationsController extends Controller
             'payload' => json_encode(['amount' => (int) $data['amount'], 'provider' => $result->payload, 'message' => $result->message], JSON_UNESCAPED_UNICODE),
             'checked_at' => now(), 'created_at' => now(), 'updated_at' => now(),
         ]);
+
         return $result->successful ? back()->with('success', 'Refund توسط Provider تأیید شد.') : back()->withErrors(['refund' => $result->message ?: 'Refund توسط Provider رد شد.']);
     }
 }

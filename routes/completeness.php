@@ -1,10 +1,10 @@
 <?php
 
 use App\Http\Controllers\Admin\FinancialOperationsController;
+use App\Http\Controllers\Admin\OperationsController;
 use App\Http\Controllers\Admin\OperationsHealthController;
 use App\Http\Controllers\Admin\OrderCompletionController;
 use App\Http\Controllers\Admin\ProviderSettingsController;
-use App\Http\Controllers\Admin\OperationsController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin')->name('admin.')->middleware('auth')->group(function (): void {
