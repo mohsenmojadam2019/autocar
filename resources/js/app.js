@@ -1,143 +1,41 @@
 /** Escapes text before inserting API-driven labels into suggestion markup. */
-const esc = (value = '') => String(value).replace(/[&<>'"]/g, ch => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    "'": '&#039;',
-    '"': '&quot;',
-}[ch]));
+const esc=(value='')=>String(value).replace(/[&<>'"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#039;','"':'&quot;'}[ch]));
+const faDigits=value=>String(value).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[Number(d)]);
+const latinDigits=value=>String(value).replace(/[۰-۹]/g,d=>String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d))).replace(/[٠-٩]/g,d=>String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)));
 
-/** Formats a remaining promotion duration in compact Persian-friendly units. */
-const formatCountdown = milliseconds => {
-    if (milliseconds <= 0) return 'پایان یافته';
-    const totalSeconds = Math.floor(milliseconds / 1000);
-    const days = Math.floor(totalSeconds / 86400);
-    const hours = Math.floor((totalSeconds % 86400) / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-    return days > 0
-        ? `${days} روز و ${hours} ساعت`
-        : `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-};
+/** Converts a Gregorian calendar date to Jalali for every user-facing date. */
+const g2j=(gy,gm,gd)=>{const gdm=[0,31,59,90,120,151,181,212,243,273,304,334];let gy2=gm>2?gy+1:gy;let days=355666+365*gy+Math.floor((gy2+3)/4)-Math.floor((gy2+99)/100)+Math.floor((gy2+399)/400)+gd+gdm[gm-1];let jy=-1595+33*Math.floor(days/12053);days%=12053;jy+=4*Math.floor(days/1461);days%=1461;if(days>365){jy+=Math.floor((days-1)/365);days=(days-1)%365;}const jm=days<186?1+Math.floor(days/31):7+Math.floor((days-186)/30);const jd=1+(days<186?days%31:(days-186)%30);return[jy,jm,jd];};
+const jalaliFromIso=value=>{const m=String(value).match(/^(20\d{2})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::\d{2})?)?/);if(!m)return value;const [jy,jm,jd]=g2j(Number(m[1]),Number(m[2]),Number(m[3]));const date=`${jy}/${String(jm).padStart(2,'0')}/${String(jd).padStart(2,'0')}`;return faDigits(date+(m[4]?` ${m[4]}:${m[5]}`:''));};
 
-/** Starts all visible promotion countdowns and expires them without a page crash. */
-const bootCountdowns = () => {
-    const counters = [...document.querySelectorAll('[data-countdown]')];
-    if (!counters.length) return;
+/** Converts native Gregorian date inputs into Jalali text fields; middleware converts them back before validation. */
+const bootJalaliInputs=()=>document.querySelectorAll('input[type="date"],input[type="datetime-local"],[data-jalali-date]').forEach(input=>{if(input.dataset.jalaliReady)return;input.dataset.jalaliReady='1';if(input.value&&/^20\d{2}-/.test(input.value))input.value=jalaliFromIso(input.value);input.type='text';input.inputMode='numeric';input.placeholder=input.placeholder||'۱۴۰۵/۰۶/۰۶';});
 
-    const tick = () => counters.forEach(counter => {
-        const target = Date.parse(counter.dataset.countdown || '');
-        const label = counter.querySelector('span');
-        if (!label || Number.isNaN(target)) return;
-        const remaining = target - Date.now();
-        label.textContent = formatCountdown(remaining);
-        counter.classList.toggle('expired', remaining <= 0);
-    });
+/** Localizes raw SQL date strings that reach Blade as stdClass/string values. */
+const localizeDateText=()=>{const root=document.querySelector('.admin-content, main');if(!root)return;const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);const nodes=[];while(walker.nextNode())nodes.push(walker.currentNode);nodes.forEach(node=>{const parent=node.parentElement;if(!parent||['SCRIPT','STYLE','CODE','PRE','INPUT','TEXTAREA'].includes(parent.tagName))return;node.nodeValue=node.nodeValue.replace(/\b20\d{2}-\d{2}-\d{2}(?:[ T]\d{2}:\d{2}(?::\d{2})?)?\b/g,value=>jalaliFromIso(value));});};
 
-    tick();
-    window.setInterval(tick, 1000);
-};
-
-/** Boots storefront mega-menu, autocomplete, vehicle picker, gallery and admin navigation without Alpine/Livewire/Vite. */
-document.addEventListener('DOMContentLoaded', () => {
+/** Boots storefront mega-menu, autocomplete, vehicle picker, checkout helpers and admin navigation without Vite. */
+document.addEventListener('DOMContentLoaded',()=>{
     document.documentElement.classList.add('js-ready');
-    bootCountdowns();
+    bootJalaliInputs();localizeDateText();
 
-    const trigger = document.querySelector('[data-mega-trigger]');
-    const mega = document.querySelector('[data-mega-menu]');
-    if (trigger && mega) {
-        trigger.addEventListener('click', () => {
-            mega.hidden = !mega.hidden;
-            trigger.setAttribute('aria-expanded', String(!mega.hidden));
-        });
-        document.addEventListener('click', event => {
-            if (!mega.hidden && !mega.contains(event.target) && !trigger.contains(event.target)) {
-                mega.hidden = true;
-                trigger.setAttribute('aria-expanded', 'false');
-            }
-        });
-    }
+    const trigger=document.querySelector('[data-mega-trigger]');const mega=document.querySelector('[data-mega-menu]');
+    if(trigger&&mega){trigger.addEventListener('click',()=>{mega.hidden=!mega.hidden;trigger.setAttribute('aria-expanded',String(!mega.hidden));});document.addEventListener('click',event=>{if(!mega.hidden&&!mega.contains(event.target)&&!trigger.contains(event.target)){mega.hidden=true;trigger.setAttribute('aria-expanded','false');}});}
 
-    const input = document.querySelector('[data-search-input]');
-    const box = document.querySelector('[data-search-suggestions]');
-    let timer;
-    if (input && box) {
-        input.addEventListener('input', () => {
-            clearTimeout(timer);
-            const q = input.value.trim();
-            if (q.length < 2) {
-                box.hidden = true;
-                return;
-            }
-            timer = setTimeout(async () => {
-                try {
-                    const response = await fetch(`/api/v1/search/suggest?q=${encodeURIComponent(q)}`, {headers: {Accept: 'application/json'}});
-                    if (!response.ok) throw new Error('search');
-                    const json = await response.json();
-                    box.innerHTML = (json.data || []).map(item => `<a href="/product/${esc(item.slug)}"><span>${esc(item.name)}<small> ${esc(item.sku)}</small></span><b>${Number(item.sale_price || 0).toLocaleString('fa-IR')}</b></a>`).join('');
-                    box.hidden = !json.data?.length;
-                } catch {
-                    box.hidden = true;
-                }
-            }, 220);
-        });
-    }
+    const input=document.querySelector('[data-search-input]');const box=document.querySelector('[data-search-suggestions]');let timer;
+    if(input&&box){input.addEventListener('input',()=>{clearTimeout(timer);const q=input.value.trim();if(q.length<2){box.hidden=true;return;}timer=setTimeout(async()=>{try{const response=await fetch(`/api/v1/search/suggest?q=${encodeURIComponent(q)}`,{headers:{Accept:'application/json'}});if(!response.ok)throw new Error('search');const json=await response.json();box.innerHTML=(json.data||[]).map(item=>`<a href="/product/${esc(item.slug)}"><span>${esc(item.name)}<small> ${esc(item.sku)}</small></span><b>${Number(item.sale_price||0).toLocaleString('fa-IR')}</b></a>`).join('');box.hidden=!json.data?.length;}catch{box.hidden=true;}},220);});}
 
-    const picker = document.querySelector('[data-vehicle-picker]');
-    if (picker) {
-        const make = picker.querySelector('[data-vehicle-make]');
-        const model = picker.querySelector('[data-vehicle-model]');
-        const generation = picker.querySelector('[data-vehicle-generation]');
-        const trim = picker.querySelector('[data-vehicle-trim]');
-        const submit = picker.querySelector('[data-vehicle-submit]');
-        const fill = (element, items, label, format = item => item.name) => {
-            element.innerHTML = `<option value="">${label}</option>` + items.map(item => `<option value="${item.id}">${esc(format(item))}</option>`).join('');
-            element.disabled = false;
-        };
+    const picker=document.querySelector('[data-vehicle-picker]');
+    if(picker){const make=picker.querySelector('[data-vehicle-make]'),model=picker.querySelector('[data-vehicle-model]'),generation=picker.querySelector('[data-vehicle-generation]'),trim=picker.querySelector('[data-vehicle-trim]');const fill=(element,items,label,format=item=>item.name)=>{element.innerHTML=`<option value="">${label}</option>`+items.map(item=>`<option value="${item.id}">${esc(format(item))}</option>`).join('');element.disabled=false;};make?.addEventListener('change',async()=>{model.disabled=generation.disabled=trim.disabled=true;if(!make.value)return;const response=await fetch(`/api/v1/vehicles/makes/${make.value}/models`);if(!response.ok)return;const json=await response.json();fill(model,json.data,'مدل');});model?.addEventListener('change',async()=>{generation.disabled=trim.disabled=true;if(!model.value)return;const response=await fetch(`/api/v1/vehicles/models/${model.value}/generations`);if(!response.ok)return;const json=await response.json();fill(generation,json.data,'نسل',item=>`${item.name} ${item.from_year??''}-${item.to_year??''}`);});generation?.addEventListener('change',async()=>{trim.disabled=true;if(!generation.value)return;const response=await fetch(`/api/v1/vehicles/generations/${generation.value}/trims`);if(!response.ok)return;const json=await response.json();fill(trim,json.data,'سال / تیپ',item=>`${item.year} - ${item.name}`);});}
 
-        make?.addEventListener('change', async () => {
-            model.disabled = generation.disabled = trim.disabled = true;
-            if (!make.value) return;
-            const response = await fetch(`/api/v1/vehicles/makes/${make.value}/models`);
-            if (!response.ok) return;
-            const json = await response.json();
-            fill(model, json.data, 'مدل');
-        });
-        model?.addEventListener('change', async () => {
-            generation.disabled = trim.disabled = true;
-            if (!model.value) return;
-            const response = await fetch(`/api/v1/vehicles/models/${model.value}/generations`);
-            if (!response.ok) return;
-            const json = await response.json();
-            fill(generation, json.data, 'نسل', item => `${item.name} ${item.from_year ?? ''}-${item.to_year ?? ''}`);
-        });
-        generation?.addEventListener('change', async () => {
-            trim.disabled = true;
-            if (!generation.value) return;
-            const response = await fetch(`/api/v1/vehicles/generations/${generation.value}/trims`);
-            if (!response.ok) return;
-            const json = await response.json();
-            fill(trim, json.data, 'سال / تیپ', item => `${item.year} - ${item.name}`);
-        });
-        submit?.addEventListener('click', () => {
-            if (!trim?.value) {
-                trim?.focus();
-                return;
-            }
-            const url = new URL('/search', window.location.origin);
-            url.searchParams.set('vehicle_trim', trim.value);
-            window.location.assign(url.toString());
-        });
-    }
+    const setAccountFields=()=>{const type=document.querySelector('[data-account-type]')?.value;document.querySelectorAll('[data-natural-field]').forEach(el=>el.hidden=type==='legal');document.querySelectorAll('[data-legal-field]').forEach(el=>el.hidden=type!=='legal');};document.querySelector('[data-account-type]')?.addEventListener('change',setAccountFields);setAccountFields();
+    const billingType=document.querySelector('[data-billing-type]');const setBillingFields=()=>{const legal=billingType?.value==='legal';document.querySelectorAll('[data-billing-natural]').forEach(el=>el.hidden=legal);document.querySelectorAll('[data-billing-legal]').forEach(el=>el.hidden=!legal);};billingType?.addEventListener('change',setBillingFields);setBillingFields();
 
-    document.querySelectorAll('[data-gallery-thumb]').forEach(button => button.addEventListener('click', () => {
-        const main = document.querySelector('[data-main-image]');
-        if (main) main.src = button.dataset.src;
-    }));
+    const invoiceKind=document.querySelector('[data-invoice-kind]'),billingProfile=document.querySelector('[data-billing-profile]');const filterBilling=()=>{if(!invoiceKind||!billingProfile)return;const kind=invoiceKind.value;[...billingProfile.options].forEach((option,index)=>{if(index===0)return;option.hidden=option.dataset.kind!==kind;option.disabled=option.dataset.kind!==kind;});if(billingProfile.selectedOptions[0]?.disabled)billingProfile.value='';};invoiceKind?.addEventListener('change',filterBilling);filterBilling();
 
-    const adminButton = document.querySelector('[data-admin-menu]');
-    const sidebar = document.querySelector('[data-admin-sidebar]');
-    if (adminButton && sidebar) {
-        adminButton.addEventListener('click', () => sidebar.classList.toggle('open'));
-    }
+    const checkout=document.querySelector('[data-checkout-form]');
+    if(checkout){const province=checkout.querySelector('[data-shipping-province]'),city=checkout.querySelector('[data-shipping-city]'),rates=checkout.querySelector('[data-shipping-rates]');let shippingTimer;const refreshRates=()=>{clearTimeout(shippingTimer);shippingTimer=setTimeout(async()=>{if(!province.value.trim())return;try{const response=await fetch(`/checkout/shipping-rates?province=${encodeURIComponent(province.value.trim())}&city=${encodeURIComponent(city.value.trim())}`,{headers:{Accept:'application/json'}});if(!response.ok)throw new Error('shipping');const json=await response.json();rates.innerHTML=(json.data||[]).length?(json.data||[]).map(rate=>`<label class="d-flex gap-2 border rounded p-2 mb-2"><input type="radio" name="shipping_method_id" value="${Number(rate.id)}"><span>${esc(rate.name)} — ${Number(rate.price||0).toLocaleString('fa-IR')} ریال</span></label>`).join(''):'<div class="alert alert-warning">برای این مقصد روش ارسال فعالی تعریف نشده است.</div>';}catch{rates.innerHTML='<div class="alert alert-danger">محاسبه نرخ ارسال ناموفق بود.</div>';}},350);};province?.addEventListener('change',refreshRates);province?.addEventListener('blur',refreshRates);city?.addEventListener('change',refreshRates);city?.addEventListener('blur',refreshRates);}
+
+    document.querySelectorAll('[data-gallery-thumb]').forEach(button=>button.addEventListener('click',()=>{const main=document.querySelector('[data-main-image]');if(main)main.src=button.dataset.src;}));
+    document.querySelectorAll('[data-banner-id]').forEach(banner=>{fetch(`/banners/${banner.dataset.bannerId}/impression`,{method:'POST',headers:{'X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]')?.content||'',Accept:'application/json'}}).catch(()=>{});});
+    const adminButton=document.querySelector('[data-admin-menu]'),sidebar=document.querySelector('[data-admin-sidebar]');if(adminButton&&sidebar)adminButton.addEventListener('click',()=>sidebar.classList.toggle('open'));
 });

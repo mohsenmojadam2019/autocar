@@ -3,8 +3,12 @@
 use App\Http\Controllers\Admin\BannerController as AdminBannerController;
 use App\Http\Controllers\Admin\ProductWorkbenchController;
 use App\Http\Controllers\Admin\PromotionController;
+use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Customer\BillingProfileController;
+use App\Http\Controllers\Customer\ProfileController;
 use App\Http\Controllers\Storefront\BannerInteractionController;
 use App\Http\Controllers\Storefront\CatalogController;
+use App\Http\Controllers\Storefront\CheckoutController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/brand/{brand}', [CatalogController::class, 'brand'])->name('brand.show');
@@ -14,6 +18,24 @@ Route::post('/banners/{banner}/impression', [BannerInteractionController::class,
 Route::get('/banners/{banner}/click', [BannerInteractionController::class, 'click'])
     ->middleware('throttle:60,1')
     ->name('banners.click');
+
+Route::middleware('guest')->group(function (): void {
+    Route::get('/register', [RegisterController::class, 'create'])->name('register');
+    Route::post('/register', [RegisterController::class, 'store'])->middleware('throttle:10,1')->name('register.store');
+});
+
+Route::middleware('auth')->group(function (): void {
+    Route::get('/checkout/shipping-rates', [CheckoutController::class, 'shippingRates'])->name('checkout.shipping-rates');
+
+    Route::prefix('account')->name('account.')->group(function (): void {
+        Route::get('/profile', [ProfileController::class, 'edit'])->name('profile');
+        Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+        Route::get('/billing-profiles', [BillingProfileController::class, 'index'])->name('billing.index');
+        Route::post('/billing-profiles', [BillingProfileController::class, 'store'])->name('billing.store');
+        Route::put('/billing-profiles/{profile}', [BillingProfileController::class, 'update'])->name('billing.update');
+        Route::delete('/billing-profiles/{profile}', [BillingProfileController::class, 'destroy'])->name('billing.destroy');
+    });
+});
 
 Route::prefix('admin')->name('admin.')->middleware('auth')->group(function (): void {
     Route::post('/promotions/automatic', [PromotionController::class, 'storeAutomatic'])
