@@ -19,18 +19,18 @@ use Illuminate\View\View;
 
 class VehicleManagementController extends Controller
 {
-    /** Shows the normalized vehicle bank and recent fitment rules in one operational workspace. */
-    public function index(Request $request): View
+    /** Shows normalized vehicle master data and recent fitment rules. */
+    public function index(): View
     {
         return view('admin.vehicles.index', [
-            'makes' => VehicleMake::query()->withCount('models')->orderBy('name')->paginate(25),
-            'engines' => VehicleEngine::query()->latest()->limit(20)->get(),
-            'fitments' => ProductFitment::query()->with(['product', 'make', 'model', 'generation', 'trim', 'engine'])->latest()->limit(25)->get(),
-            'products' => Product::query()->orderBy('name')->limit(100)->get(['id', 'name', 'sku']),
+            'makes' => VehicleMake::query()->with('models.generations.trims')->orderBy('name')->get(),
+            'engines' => VehicleEngine::query()->latest()->limit(100)->get(),
+            'fitments' => ProductFitment::query()->with(['product', 'make', 'model', 'generation', 'trim', 'engine'])->latest()->limit(50)->get(),
+            'products' => Product::query()->orderBy('name')->limit(250)->get(['slug', 'name', 'sku']),
         ]);
     }
 
-    /** Creates a top-level vehicle manufacturer/brand. */
+    /** Creates a top-level vehicle manufacturer. */
     public function storeMake(Request $request): RedirectResponse
     {
         $data = $request->validate(['name' => ['required', 'string', 'max:100'], 'name_en' => ['nullable', 'string', 'max:100'], 'slug' => ['nullable', 'string', 'max:120', 'unique:vehicle_makes,slug']]);
@@ -72,18 +72,27 @@ class VehicleManagementController extends Controller
         return back()->with('success', 'تیپ/سال خودرو ایجاد شد.');
     }
 
-    /** Stores a product fitment rule; null dimensions act as deliberate wildcards. */
+    /** Stores a fitment rule with product resolved strictly by product slug. */
     public function storeFitment(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'product_id' => ['required', 'exists:products,id'], 'product_variant_id' => ['nullable', 'exists:product_variants,id'],
-            'vehicle_make_id' => ['nullable', 'exists:vehicle_makes,id'], 'vehicle_model_id' => ['nullable', 'exists:vehicle_models,id'],
-            'vehicle_generation_id' => ['nullable', 'exists:vehicle_generations,id'], 'vehicle_trim_id' => ['nullable', 'exists:vehicle_trims,id'],
-            'vehicle_engine_id' => ['nullable', 'exists:vehicle_engines,id'], 'from_year' => ['nullable', 'integer', 'min:1900', 'max:2200'],
-            'to_year' => ['nullable', 'integer', 'gte:from_year', 'max:2200'], 'status' => ['required', Rule::enum(FitmentStatus::class)],
-            'is_exclusion' => ['nullable', 'boolean'], 'confidence' => ['required', 'integer', 'min:0', 'max:100'], 'notes' => ['nullable', 'string', 'max:1000'],
+            'product_slug' => ['required', 'exists:products,slug'],
+            'product_variant_id' => ['nullable', 'exists:product_variants,id'],
+            'vehicle_make_id' => ['nullable', 'exists:vehicle_makes,id'],
+            'vehicle_model_id' => ['nullable', 'exists:vehicle_models,id'],
+            'vehicle_generation_id' => ['nullable', 'exists:vehicle_generations,id'],
+            'vehicle_trim_id' => ['nullable', 'exists:vehicle_trims,id'],
+            'vehicle_engine_id' => ['nullable', 'exists:vehicle_engines,id'],
+            'from_year' => ['nullable', 'integer', 'min:1900', 'max:2200'],
+            'to_year' => ['nullable', 'integer', 'gte:from_year', 'max:2200'],
+            'status' => ['required', Rule::enum(FitmentStatus::class)],
+            'is_exclusion' => ['nullable', 'boolean'],
+            'confidence' => ['required', 'integer', 'min:0', 'max:100'],
+            'notes' => ['nullable', 'string', 'max:1000'],
         ]);
-        ProductFitment::query()->create($data);
+        $product = Product::query()->where('slug', $data['product_slug'])->firstOrFail();
+        unset($data['product_slug']);
+        ProductFitment::query()->create($data + ['product_id' => $product->id]);
         return back()->with('success', 'قانون سازگاری ثبت شد.');
     }
 

@@ -13,6 +13,12 @@ class Brand extends Model
 
     protected $guarded = [];
 
+    /** Uses a readable slug for all brand route-model binding. */
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
     protected function casts(): array
     {
         return ['is_active' => 'boolean'];
