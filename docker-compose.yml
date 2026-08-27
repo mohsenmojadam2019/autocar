@@ -1,0 +1,26 @@
+services:
+  app:
+    build: .
+    ports: ['8080:80']
+    env_file: .env
+    depends_on:
+      mysql: {condition: service_healthy}
+      redis: {condition: service_started}
+    volumes:
+      - ./storage:/var/www/html/storage
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: autocar
+      MYSQL_USER: autocar
+      MYSQL_PASSWORD: autocar
+      MYSQL_ROOT_PASSWORD: root
+    volumes: ['mysql_data:/var/lib/mysql']
+    healthcheck: {test: ['CMD','mysqladmin','ping','-h','localhost','-proot'], interval: 10s, timeout: 5s, retries: 10}
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes: ['redis_data:/data']
+volumes:
+  mysql_data:
+  redis_data:
