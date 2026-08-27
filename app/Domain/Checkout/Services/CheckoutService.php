@@ -3,6 +3,7 @@
 namespace App\Domain\Checkout\Services;
 
 use App\Domain\Cart\Models\Cart;
+use App\Domain\Customer\Models\BillingProfile;
 use App\Domain\Inventory\Services\InventoryReservationService;
 use App\Domain\Order\Models\Order;
 use App\Domain\Order\Services\OrderService;
@@ -11,6 +12,7 @@ use App\Domain\Promotion\Models\Coupon;
 use App\Domain\Promotion\Services\CouponService;
 use App\Domain\Promotion\Services\PricingService;
 use App\Domain\Shipping\Services\ShippingRateService;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
@@ -25,20 +27,28 @@ class CheckoutService
         private readonly WalletService $wallets,
     ) {}
 
-    /** Converts a cart into an immutable order after repricing, shipping validation, coupon rules, wallet use and stock reservation. */
+    /** Converts a cart into an immutable order after pricing, tax, shipping, billing identity and stock validation. */
     public function createOrder(
         Cart $cart,
         array $shippingAddress,
         ?Coupon $coupon = null,
         ?int $shippingMethodId = null,
         bool $useWallet = false,
+        ?BillingProfile $billingProfile = null,
+        string $invoiceKind = 'natural',
     ): Order {
         $cart->loadMissing(['items.product.brand', 'items.product.categories', 'items.variant']);
         if ($cart->status !== 'active' || $cart->items->isEmpty()) {
             throw new RuntimeException('سبد خرید برای ثبت سفارش معتبر نیست.');
         }
+        if (! in_array($invoiceKind, ['natural', 'legal'], true)) {
+            throw new RuntimeException('نوع فاکتور معتبر نیست.');
+        }
 
-        return DB::transaction(function () use ($cart, $shippingAddress, $coupon, $shippingMethodId, $useWallet): Order {
+        $user = $cart->user_id ? User::query()->find($cart->user_id) : null;
+        $billingSnapshot = $this->billingSnapshot($user, $billingProfile, $shippingAddress, $invoiceKind);
+
+        return DB::transaction(function () use ($cart, $shippingAddress, $coupon, $shippingMethodId, $useWallet, $billingProfile, $invoiceKind, $billingSnapshot, $user): Order {
             foreach ($cart->items as $item) {
                 $snapshot = $this->pricing->price($item->product, $item->variant, (int) $item->quantity);
                 $item->unit_price = $snapshot['final_price'];
@@ -78,9 +88,12 @@ class CheckoutService
                 'number' => $this->orders->nextNumber(),
                 'user_id' => $cart->user_id,
                 'cart_id' => $cart->id,
+                'billing_profile_id' => $billingProfile?->id,
                 'shipping_method_id' => $selectedRate?->id,
                 'status' => 'pending_payment',
                 'source' => 'web',
+                'buyer_type' => $user?->account_type ?? 'natural',
+                'invoice_kind' => $invoiceKind,
                 'subtotal' => $subtotal,
                 'discount_total' => $discount,
                 'wallet_total' => 0,
@@ -88,7 +101,8 @@ class CheckoutService
                 'tax_total' => $tax,
                 'grand_total' => $grand,
                 'shipping_address' => $shippingAddress,
-                'billing_address' => $shippingAddress,
+                'billing_address' => $billingSnapshot,
+                'billing_profile_snapshot' => $billingSnapshot,
                 'coupon_code' => $coupon?->code,
             ]);
 
@@ -135,5 +149,41 @@ class CheckoutService
 
             return $order->fresh(['items', 'payments']);
         });
+    }
+
+    /** Produces and validates the billing identity copied permanently into the order. */
+    private function billingSnapshot(?User $user, ?BillingProfile $profile, array $shippingAddress, string $invoiceKind): array
+    {
+        if ($profile) {
+            if (! $user || (int) $profile->user_id !== (int) $user->id) {
+                throw new RuntimeException('پروفایل فاکتور متعلق به این کاربر نیست.');
+            }
+            if ($profile->type !== $invoiceKind) {
+                throw new RuntimeException('نوع پروفایل فاکتور با نوع فاکتور انتخاب‌شده مطابقت ندارد.');
+            }
+
+            return $profile->snapshot();
+        }
+
+        if (! $user || $invoiceKind === 'legal' || $user->account_type !== 'natural' || ! $user->national_code) {
+            throw new RuntimeException('برای این نوع فاکتور باید یک پروفایل صدور فاکتور کامل انتخاب کنید.');
+        }
+
+        return [
+            'type' => 'natural',
+            'title' => 'فاکتور شخصی',
+            'full_name' => $user->name,
+            'national_code' => $user->national_code,
+            'company_name' => null,
+            'national_id' => null,
+            'economic_code' => null,
+            'registration_number' => null,
+            'phone' => null,
+            'mobile' => $user->mobile,
+            'province' => $shippingAddress['province'] ?? null,
+            'city' => $shippingAddress['city'] ?? null,
+            'postal_code' => $shippingAddress['postal_code'] ?? null,
+            'address' => $shippingAddress['address'] ?? null,
+        ];
     }
 }
