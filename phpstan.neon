@@ -6,5 +6,4 @@ parameters:
         - app
         - routes
     level: 7
-    checkMissingIterableValueType: false
     treatPhpDocTypesAsCertain: false

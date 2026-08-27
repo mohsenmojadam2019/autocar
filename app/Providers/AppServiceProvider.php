@@ -25,11 +25,12 @@ class AppServiceProvider extends ServiceProvider
         Route::middleware('web')->group(function (): void {
             Route::get('/assets/app.css', fn (): Response => $this->assetResponse(resource_path('css/app.css'), 'text/css; charset=UTF-8'))->name('assets.css');
             Route::get('/assets/extensions.css', fn (): Response => $this->assetResponse(resource_path('css/extensions.css'), 'text/css; charset=UTF-8'))->name('assets.extensions.css');
+            Route::get('/assets/ux.css', fn (): Response => $this->assetResponse(resource_path('css/ux.css'), 'text/css; charset=UTF-8'))->name('assets.ux.css');
             Route::get('/assets/app.js', fn (): Response => $this->assetResponse(resource_path('js/app.js'), 'application/javascript; charset=UTF-8'))->name('assets.js');
+            Route::get('/assets/ux.js', fn (): Response => $this->assetResponse(resource_path('js/ux.js'), 'application/javascript; charset=UTF-8'))->name('assets.ux.js');
         });
     }
 
-    /** Serves build-free static assets with validators so browsers avoid needless transfers. */
     private function assetResponse(string $path, string $contentType): Response
     {
         $content = (string) file_get_contents($path);
@@ -40,7 +41,6 @@ class AppServiceProvider extends ServiceProvider
         if (request()->header('If-None-Match') === $etag) {
             return response('', 304, ['ETag' => $etag, 'Cache-Control' => 'public, max-age=86400']);
         }
-
         return response($content, 200, ['Content-Type' => $contentType, 'Cache-Control' => 'public, max-age=86400', 'ETag' => $etag]);
     }
 }
