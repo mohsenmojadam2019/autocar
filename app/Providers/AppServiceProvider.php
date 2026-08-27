@@ -41,6 +41,7 @@ class AppServiceProvider extends ServiceProvider
         if (request()->header('If-None-Match') === $etag) {
             return response('', 304, ['ETag' => $etag, 'Cache-Control' => 'public, max-age=86400']);
         }
+
         return response($content, 200, ['Content-Type' => $contentType, 'Cache-Control' => 'public, max-age=86400', 'ETag' => $etag]);
     }
 }
