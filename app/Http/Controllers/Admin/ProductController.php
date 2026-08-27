@@ -31,7 +31,7 @@ class ProductController extends Controller
     /** Shows the create form with reusable taxonomy data. */
     public function create(): View
     {
-        return view('admin.products.form', ['product' => new Product(), 'brands' => Brand::query()->orderBy('name')->get(), 'categories' => Category::query()->orderBy('name')->get()]);
+        return view('admin.products.form', ['product' => new Product, 'brands' => Brand::query()->orderBy('name')->get(), 'categories' => Category::query()->orderBy('name')->get()]);
     }
 
     /** Stores a product and resolves category membership exclusively from category slugs. */
@@ -51,6 +51,7 @@ class ProductController extends Controller
     public function edit(Product $product): View
     {
         $product->load('categories');
+
         return view('admin.products.form', ['product' => $product, 'brands' => Brand::query()->orderBy('name')->get(), 'categories' => Category::query()->orderBy('name')->get()]);
     }
 
@@ -70,6 +71,7 @@ class ProductController extends Controller
     public function duplicate(Product $product, ProductCloneService $cloner): RedirectResponse
     {
         $copy = $cloner->clone($product);
+
         return redirect()->route('admin.products.edit', $copy)->with('success', 'کپی محصول ساخته شد.');
     }
 

@@ -26,6 +26,7 @@ class MarketingController extends Controller
     {
         $data = $request->validate(['name' => ['required', 'string', 'max:190'], 'segment_id' => ['nullable', 'exists:customer_segments,id'], 'message' => ['required', 'string', 'max:1000'], 'scheduled_at' => ['nullable', 'date'], 'rate_per_minute' => ['required', 'integer', 'min:1', 'max:600']]);
         DB::table('sms_campaigns')->insert($data + ['status' => 'draft', 'created_at' => now(), 'updated_at' => now()]);
+
         return back()->with('success', 'کمپین ایجاد شد.');
     }
 
@@ -33,6 +34,7 @@ class MarketingController extends Controller
     public function buildRecipients(int $campaign, CampaignService $service): RedirectResponse
     {
         $count = $service->buildRecipients($campaign);
+
         return back()->with('success', number_format($count).' گیرنده واجد شرایط به کمپین اضافه شد.');
     }
 
@@ -40,6 +42,7 @@ class MarketingController extends Controller
     public function stop(int $campaign, CampaignService $service): RedirectResponse
     {
         $service->stop($campaign);
+
         return back()->with('success', 'کمپین متوقف شد.');
     }
 
@@ -49,6 +52,7 @@ class MarketingController extends Controller
         $data = $request->validate(['name' => ['required', 'string', 'max:190'], 'customer_group' => ['nullable', 'string', 'max:32'], 'min_lifetime_value' => ['nullable', 'integer', 'min:0']]);
         $rules = array_filter(['customer_group' => $data['customer_group'] ?? null, 'min_lifetime_value' => $data['min_lifetime_value'] ?? null], fn ($value) => $value !== null && $value !== '');
         DB::table('customer_segments')->insert(['name' => $data['name'], 'rules' => json_encode($rules, JSON_UNESCAPED_UNICODE), 'is_active' => true, 'created_at' => now(), 'updated_at' => now()]);
+
         return back()->with('success', 'سگمنت مشتری ایجاد شد.');
     }
 }

@@ -36,6 +36,7 @@ class AdminSecurityGate
             $verifiedAt = (int) $request->session()->get('two_factor_verified_at', 0);
             if ($verifiedAt < now()->subHours(12)->timestamp) {
                 $request->session()->put('url.intended', $request->fullUrl());
+
                 return redirect()->route('2fa.challenge');
             }
         }
@@ -87,7 +88,7 @@ class AdminSecurityGate
         if ($remainingBits === 0) {
             return true;
         }
-        $mask = (0xff << (8 - $remainingBits)) & 0xff;
+        $mask = (0xFF << (8 - $remainingBits)) & 0xFF;
 
         return (ord($ipBinary[$fullBytes]) & $mask) === (ord($networkBinary[$fullBytes]) & $mask);
     }

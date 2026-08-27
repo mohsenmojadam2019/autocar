@@ -17,6 +17,7 @@ class CatalogOperationsController extends Controller
     public function index(): View
     {
         $imports = DB::table('catalog_imports')->latest()->paginate(30);
+
         return view('admin.catalog-operations.index', compact('imports'));
     }
 
@@ -26,6 +27,7 @@ class CatalogOperationsController extends Controller
         $data = $request->validate(['file' => ['required', 'file', 'mimes:csv,txt', 'max:10240']]);
         $path = $data['file']->storeAs('imports', now()->format('Ymd-His').'-catalog.csv', 'local');
         $importId = $transfer->importCsv(Storage::disk('local')->path($path), $request->user()->id);
+
         return back()->with('success', 'Import #'.$importId.' پردازش شد.');
     }
 
@@ -33,6 +35,7 @@ class CatalogOperationsController extends Controller
     public function export(CatalogTransferService $transfer): BinaryFileResponse
     {
         $path = $transfer->exportCsv();
+
         return response()->download(Storage::disk('local')->path($path), basename($path));
     }
 
@@ -49,6 +52,7 @@ class CatalogOperationsController extends Controller
         ]);
         $changes = array_filter(array_intersect_key($data, array_flip(['status', 'sale_price', 'compare_at_price', 'wholesale_price'])), fn ($value) => $value !== null && $value !== '');
         $count = $transfer->bulkUpdate($data['product_slugs'], $changes);
+
         return back()->with('success', number_format($count).' محصول بروزرسانی شد.');
     }
 
@@ -58,6 +62,7 @@ class CatalogOperationsController extends Controller
         $job = DB::table('catalog_imports')->find($import);
         abort_unless($job, 404);
         $errors = DB::table('catalog_import_errors')->where('catalog_import_id', $import)->paginate(100);
+
         return view('admin.catalog-operations.errors', compact('job', 'errors'));
     }
 }

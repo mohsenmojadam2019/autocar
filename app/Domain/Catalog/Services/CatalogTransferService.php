@@ -49,6 +49,7 @@ class CatalogTransferService
             if (! is_array($payload)) {
                 $failed++;
                 $this->recordImportError($importId, $rowNumber, 'تعداد ستون‌ها نامعتبر است.', []);
+
                 continue;
             }
 

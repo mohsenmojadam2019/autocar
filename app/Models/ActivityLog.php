@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 class ActivityLog extends Model
 {
     public $timestamps = false;
+
     protected $guarded = [];
 
     protected function casts(): array

@@ -3,6 +3,7 @@
 namespace App\Domain\Catalog\Services;
 
 use App\Domain\Catalog\Models\Product;
+use App\Domain\Catalog\Models\ProductVariant;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -62,6 +63,7 @@ class ProductCloneService
         while (Product::query()->where('slug', $candidate)->exists()) {
             $candidate = $slug.'-'.$suffix++;
         }
+
         return $candidate;
     }
 
@@ -70,9 +72,10 @@ class ProductCloneService
     {
         $candidate = strtoupper($base);
         $suffix = 2;
-        while (Product::query()->where('sku', $candidate)->exists() || \App\Domain\Catalog\Models\ProductVariant::query()->where('sku', $candidate)->exists()) {
+        while (Product::query()->where('sku', $candidate)->exists() || ProductVariant::query()->where('sku', $candidate)->exists()) {
             $candidate = strtoupper($base).'-'.$suffix++;
         }
+
         return $candidate;
     }
 }

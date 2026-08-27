@@ -23,6 +23,7 @@ class MegaMenuController extends Controller
         $data = $request->validate(['parent_id' => ['nullable', 'exists:menu_items,id'], 'title' => ['required', 'string', 'max:120'], 'type' => ['required', 'in:link,category,column,banner'], 'url' => ['nullable', 'string', 'max:500'], 'icon' => ['nullable', 'string', 'max:120'], 'position' => ['required', 'integer', 'min:0'], 'columns' => ['required', 'integer', 'min:1', 'max:6'], 'mobile_visible' => ['nullable', 'boolean'], 'desktop_visible' => ['nullable', 'boolean'], 'starts_at' => ['nullable', 'date'], 'ends_at' => ['nullable', 'date', 'after_or_equal:starts_at']]);
         MenuItem::query()->create($data + ['menu' => 'main']);
         $menus->flush('main');
+
         return back()->with('success', 'آیتم مگامنو ایجاد شد.');
     }
 
@@ -31,6 +32,7 @@ class MegaMenuController extends Controller
     {
         $item->delete();
         $menus->flush('main');
+
         return back()->with('success', 'آیتم منو حذف شد.');
     }
 }

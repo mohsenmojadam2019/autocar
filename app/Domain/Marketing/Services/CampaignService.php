@@ -89,6 +89,7 @@ class CampaignService
                     : false;
                 if (! $consented) {
                     DB::table('sms_campaign_recipients')->where('id', $recipient->id)->update(['status' => 'skipped_no_consent', 'updated_at' => now()]);
+
                     continue;
                 }
                 try {

@@ -231,7 +231,7 @@ return new class extends Migration
     /** Drops commerce tables in strict reverse dependency order. */
     public function down(): void
     {
-        foreach (['order_status_histories','order_items','orders','addresses','coupon_redemptions','coupons','cart_items','carts','price_histories','purchase_order_items','purchase_orders','stock_movements','stock_items','warehouse_bins','warehouses','suppliers'] as $table) {
+        foreach (['order_status_histories', 'order_items', 'orders', 'addresses', 'coupon_redemptions', 'coupons', 'cart_items', 'carts', 'price_histories', 'purchase_order_items', 'purchase_orders', 'stock_movements', 'stock_items', 'warehouse_bins', 'warehouses', 'suppliers'] as $table) {
             Schema::dropIfExists($table);
         }
     }

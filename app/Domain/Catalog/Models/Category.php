@@ -65,6 +65,7 @@ class Category extends Model
             array_unshift($items, ['name' => $cursor->name, 'slug' => $cursor->slug]);
             $cursor = $cursor->parent()->first();
         }
+
         return $items;
     }
 }

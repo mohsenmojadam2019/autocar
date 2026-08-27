@@ -7,7 +7,6 @@ use App\Domain\Vehicle\DTOs\FitmentResult;
 use App\Domain\Vehicle\Enums\FitmentStatus;
 use App\Domain\Vehicle\Models\ProductFitment;
 use App\Domain\Vehicle\Models\VehicleTrim;
-use Illuminate\Support\Collection;
 
 class FitmentResolver
 {
@@ -34,6 +33,7 @@ class FitmentResolver
 
         /** @var ProductFitment $rule */
         $rule = $ordered->first();
+
         return new FitmentResult($rule->status, $rule->notes ?: $this->messageFor($rule->status), $rule->getKey(), (int) $rule->confidence);
     }
 
@@ -44,14 +44,30 @@ class FitmentResolver
         $model = $generation->model;
         $make = $model->make;
 
-        if ($rule->product_variant_id && (int) $rule->product_variant_id !== (int) $variantId) return false;
-        if ($rule->vehicle_make_id && (int) $rule->vehicle_make_id !== (int) $make->getKey()) return false;
-        if ($rule->vehicle_model_id && (int) $rule->vehicle_model_id !== (int) $model->getKey()) return false;
-        if ($rule->vehicle_generation_id && (int) $rule->vehicle_generation_id !== (int) $generation->getKey()) return false;
-        if ($rule->vehicle_trim_id && (int) $rule->vehicle_trim_id !== (int) $trim->getKey()) return false;
-        if ($rule->vehicle_engine_id && (int) $rule->vehicle_engine_id !== (int) $trim->vehicle_engine_id) return false;
-        if ($rule->from_year && $trim->year < $rule->from_year) return false;
-        if ($rule->to_year && $trim->year > $rule->to_year) return false;
+        if ($rule->product_variant_id && (int) $rule->product_variant_id !== (int) $variantId) {
+            return false;
+        }
+        if ($rule->vehicle_make_id && (int) $rule->vehicle_make_id !== (int) $make->getKey()) {
+            return false;
+        }
+        if ($rule->vehicle_model_id && (int) $rule->vehicle_model_id !== (int) $model->getKey()) {
+            return false;
+        }
+        if ($rule->vehicle_generation_id && (int) $rule->vehicle_generation_id !== (int) $generation->getKey()) {
+            return false;
+        }
+        if ($rule->vehicle_trim_id && (int) $rule->vehicle_trim_id !== (int) $trim->getKey()) {
+            return false;
+        }
+        if ($rule->vehicle_engine_id && (int) $rule->vehicle_engine_id !== (int) $trim->vehicle_engine_id) {
+            return false;
+        }
+        if ($rule->from_year && $trim->year < $rule->from_year) {
+            return false;
+        }
+        if ($rule->to_year && $trim->year > $rule->to_year) {
+            return false;
+        }
 
         return true;
     }

@@ -27,6 +27,7 @@ class FeedbackController extends Controller
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+
         return back()->with('success', 'نظر شما برای بررسی ثبت شد.');
     }
 
@@ -35,6 +36,7 @@ class FeedbackController extends Controller
     {
         $data = $request->validate(['question' => ['required', 'string', 'max:2000']]);
         DB::table('product_questions')->insert(['product_id' => $product->id, 'user_id' => $request->user()?->id, 'question' => $data['question'], 'status' => 'pending', 'created_at' => now(), 'updated_at' => now()]);
+
         return back()->with('success', 'پرسش شما ثبت شد.');
     }
 
@@ -43,6 +45,7 @@ class FeedbackController extends Controller
     {
         $data = $request->validate(['reason' => ['required', 'string', 'max:500']]);
         DB::table('review_reports')->updateOrInsert(['review_id' => $review, 'user_id' => $request->user()?->id], ['reason' => $data['reason'], 'status' => 'pending', 'updated_at' => now(), 'created_at' => now()]);
+
         return back()->with('success', 'گزارش ثبت شد.');
     }
 }

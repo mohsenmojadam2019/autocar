@@ -36,6 +36,7 @@ class VehicleManagementController extends Controller
         $data = $request->validate(['name' => ['required', 'string', 'max:100'], 'name_en' => ['nullable', 'string', 'max:100'], 'slug' => ['nullable', 'string', 'max:120', 'unique:vehicle_makes,slug']]);
         $data['slug'] = $data['slug'] ?: Str::slug($data['name_en'] ?: $data['name']);
         VehicleMake::query()->create($data + ['is_active' => true]);
+
         return back()->with('success', 'برند خودرو ایجاد شد.');
     }
 
@@ -45,6 +46,7 @@ class VehicleManagementController extends Controller
         $data = $request->validate(['vehicle_make_id' => ['required', 'exists:vehicle_makes,id'], 'name' => ['required', 'string', 'max:100'], 'name_en' => ['nullable', 'string', 'max:100'], 'slug' => ['nullable', 'string', 'max:120']]);
         $data['slug'] = $data['slug'] ?: Str::slug($data['name_en'] ?: $data['name']);
         VehicleModel::query()->create($data + ['is_active' => true]);
+
         return back()->with('success', 'مدل خودرو ایجاد شد.');
     }
 
@@ -53,6 +55,7 @@ class VehicleManagementController extends Controller
     {
         $data = $request->validate(['vehicle_model_id' => ['required', 'exists:vehicle_models,id'], 'name' => ['required', 'string', 'max:100'], 'from_year' => ['nullable', 'integer', 'min:1900', 'max:2200'], 'to_year' => ['nullable', 'integer', 'gte:from_year', 'max:2200'], 'body_type' => ['nullable', 'string', 'max:50']]);
         VehicleGeneration::query()->create($data);
+
         return back()->with('success', 'نسل خودرو ایجاد شد.');
     }
 
@@ -61,6 +64,7 @@ class VehicleManagementController extends Controller
     {
         $data = $request->validate(['name' => ['required', 'string', 'max:100'], 'code' => ['nullable', 'string', 'max:50'], 'displacement_cc' => ['nullable', 'integer', 'min:100', 'max:15000'], 'fuel_type' => ['nullable', 'string', 'max:24'], 'power_hp' => ['nullable', 'integer', 'min:1', 'max:3000']]);
         VehicleEngine::query()->create($data);
+
         return back()->with('success', 'موتور خودرو ثبت شد.');
     }
 
@@ -69,6 +73,7 @@ class VehicleManagementController extends Controller
     {
         $data = $request->validate(['vehicle_generation_id' => ['required', 'exists:vehicle_generations,id'], 'vehicle_engine_id' => ['nullable', 'exists:vehicle_engines,id'], 'name' => ['required', 'string', 'max:100'], 'year' => ['required', 'integer', 'min:1900', 'max:2200'], 'transmission' => ['nullable', 'string', 'max:32'], 'drivetrain' => ['nullable', 'string', 'max:16'], 'market' => ['nullable', 'string', 'max:32']]);
         VehicleTrim::query()->create($data + ['is_active' => true]);
+
         return back()->with('success', 'تیپ/سال خودرو ایجاد شد.');
     }
 
@@ -93,6 +98,7 @@ class VehicleManagementController extends Controller
         $product = Product::query()->where('slug', $data['product_slug'])->firstOrFail();
         unset($data['product_slug']);
         ProductFitment::query()->create($data + ['product_id' => $product->id]);
+
         return back()->with('success', 'قانون سازگاری ثبت شد.');
     }
 
@@ -100,6 +106,7 @@ class VehicleManagementController extends Controller
     public function destroyFitment(ProductFitment $fitment): RedirectResponse
     {
         $fitment->delete();
+
         return back()->with('success', 'قانون سازگاری حذف شد.');
     }
 }

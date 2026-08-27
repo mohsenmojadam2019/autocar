@@ -15,6 +15,7 @@ class OperationsController extends Controller
     public function payments(Request $request): View
     {
         $rows = DB::table('payment_transactions')->when($request->filled('gateway'), fn ($query) => $query->where('gateway', $request->gateway))->latest()->paginate(30)->withQueryString();
+
         return view('admin.operations.table', ['title' => 'پرداخت‌ها', 'description' => 'تراکنش، Authority، Reference و وضعیت Verify', 'rows' => $rows, 'columns' => ['id' => '#', 'gateway' => 'درگاه', 'status' => 'وضعیت', 'authority' => 'Authority', 'reference_id' => 'Reference', 'amount' => 'مبلغ', 'created_at' => 'تاریخ']]);
     }
 
@@ -22,6 +23,7 @@ class OperationsController extends Controller
     public function returns(): View
     {
         $rows = DB::table('returns')->latest()->paginate(30);
+
         return view('admin.operations.table', ['title' => 'مرجوعی و بازپرداخت', 'description' => 'RMAهای جزئی/کامل و مبالغ درخواستی', 'rows' => $rows, 'columns' => ['number' => 'شماره RMA', 'order_id' => 'سفارش', 'status' => 'وضعیت', 'reason_code' => 'دلیل', 'requested_refund' => 'درخواست بازپرداخت', 'approved_refund' => 'تأییدشده', 'created_at' => 'تاریخ']]);
     }
 
@@ -29,6 +31,7 @@ class OperationsController extends Controller
     public function content(): View
     {
         $rows = DB::table('posts')->latest()->paginate(30);
+
         return view('admin.operations.table', ['title' => 'محتوا و بلاگ', 'description' => 'مقالات منتشرشده و پیش‌نویس‌های SEO', 'rows' => $rows, 'columns' => ['id' => '#', 'title' => 'عنوان', 'slug' => 'Slug', 'status' => 'وضعیت', 'published_at' => 'انتشار', 'updated_at' => 'آخرین تغییر']]);
     }
 

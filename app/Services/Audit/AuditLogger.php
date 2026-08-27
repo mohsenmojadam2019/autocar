@@ -12,6 +12,7 @@ class AuditLogger
     public function log(string $event, ?Model $subject = null, array $before = [], array $after = [], array $meta = [], ?Request $request = null): ActivityLog
     {
         $request ??= request();
+
         return ActivityLog::query()->create([
             'user_id' => auth()->id(),
             'event' => $event,

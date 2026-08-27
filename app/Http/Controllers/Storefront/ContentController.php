@@ -13,6 +13,7 @@ class ContentController extends Controller
     {
         $page = DB::table('pages')->where('slug', $slug)->where('status', 'published')->whereNull('deleted_at')->where(fn ($query) => $query->whereNull('published_at')->orWhere('published_at', '<=', now()))->first();
         abort_unless($page, 404);
+
         return view('storefront.content.page', compact('page'));
     }
 
@@ -20,6 +21,7 @@ class ContentController extends Controller
     public function blog(): View
     {
         $posts = DB::table('posts')->where('status', 'published')->whereNull('deleted_at')->where('published_at', '<=', now())->latest('published_at')->paginate(12);
+
         return view('storefront.content.blog', compact('posts'));
     }
 
@@ -28,6 +30,7 @@ class ContentController extends Controller
     {
         $post = DB::table('posts')->where('slug', $slug)->where('status', 'published')->whereNull('deleted_at')->where('published_at', '<=', now())->first();
         abort_unless($post, 404);
+
         return view('storefront.content.post', compact('post'));
     }
 
@@ -35,6 +38,7 @@ class ContentController extends Controller
     public function faq(): View
     {
         $faqs = DB::table('faqs')->where('is_active', true)->orderBy('group')->orderBy('position')->get()->groupBy('group');
+
         return view('storefront.content.faq', compact('faqs'));
     }
 }

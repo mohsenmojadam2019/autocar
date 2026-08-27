@@ -47,6 +47,7 @@ class OtpService
         }
 
         $otp->update(['consumed_at' => now()]);
+
         return true;
     }
 }

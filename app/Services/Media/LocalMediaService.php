@@ -69,6 +69,7 @@ class LocalMediaService
         }
         $path = trim($directory, '/').'/variants/'.Str::uuid().'.webp';
         Storage::disk('public')->put($path, $encoded);
+
         return $path;
     }
 }

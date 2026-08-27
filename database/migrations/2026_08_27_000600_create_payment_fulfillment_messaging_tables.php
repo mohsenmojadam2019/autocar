@@ -46,7 +46,7 @@ return new class extends Migration
             $table->string('description')->nullable();
             $table->json('meta')->nullable();
             $table->timestamp('created_at')->useCurrent();
-            $table->index(['reference_type','reference_id']);
+            $table->index(['reference_type', 'reference_id']);
         });
 
         Schema::create('shipping_methods', function (Blueprint $table): void {
@@ -162,13 +162,15 @@ return new class extends Migration
             $table->boolean('database')->default(true);
             $table->boolean('marketing')->default(false);
             $table->timestamps();
-            $table->unique(['user_id','event']);
+            $table->unique(['user_id', 'event']);
         });
     }
 
     /** Drops payment and fulfilment infrastructure in reverse dependency order. */
     public function down(): void
     {
-        foreach (['notification_preferences','sms_messages','sms_templates','refunds','return_items','returns','invoices','shipments','shipping_methods','wallet_entries','wallets','payment_transactions'] as $table) Schema::dropIfExists($table);
+        foreach (['notification_preferences', 'sms_messages', 'sms_templates', 'refunds', 'return_items', 'returns', 'invoices', 'shipments', 'shipping_methods', 'wallet_entries', 'wallets', 'payment_transactions'] as $table) {
+            Schema::dropIfExists($table);
+        }
     }
 };

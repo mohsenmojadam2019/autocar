@@ -3,8 +3,11 @@
 namespace App\Domain\Order\Models;
 
 use App\Domain\Customer\Models\BillingProfile;
+use App\Domain\Invoice\Models\Invoice;
 use App\Domain\Order\Enums\OrderStatus;
 use App\Domain\Payment\Models\PaymentTransaction;
+use App\Domain\Returns\Models\ReturnRequest;
+use App\Domain\Shipping\Models\Shipment;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -60,18 +63,18 @@ class Order extends Model
     /** Returns issued invoice documents. */
     public function invoices(): HasMany
     {
-        return $this->hasMany(\App\Domain\Invoice\Models\Invoice::class);
+        return $this->hasMany(Invoice::class);
     }
 
     /** Returns fulfilment shipments and tracking state. */
     public function shipments(): HasMany
     {
-        return $this->hasMany(\App\Domain\Shipping\Models\Shipment::class);
+        return $this->hasMany(Shipment::class);
     }
 
     /** Returns RMA requests opened for this order. */
     public function returns(): HasMany
     {
-        return $this->hasMany(\App\Domain\Returns\Models\ReturnRequest::class);
+        return $this->hasMany(ReturnRequest::class);
     }
 }

@@ -27,6 +27,7 @@ class PartRequestController extends Controller
             'description' => ['nullable', 'string', 'max:3000'],
         ]);
         DB::table('part_requests')->insert($data + ['user_id' => $request->user()?->id, 'status' => 'new', 'created_at' => now(), 'updated_at' => now()]);
+
         return back()->with('success', 'درخواست قطعه ثبت شد و توسط پشتیبانی بررسی می‌شود.');
     }
 }

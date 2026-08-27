@@ -22,6 +22,7 @@ class AccountController extends Controller
     public function orders(Request $request): View
     {
         $orders = Order::query()->where('user_id', $request->user()->id)->with('shipments')->latest()->paginate(20);
+
         return view('customer.orders.index', compact('orders'));
     }
 
@@ -29,6 +30,7 @@ class AccountController extends Controller
     public function order(Request $request, string $number): View
     {
         $order = $this->ownedOrder($request, $number)->load(['items', 'payments', 'shipments', 'invoices', 'returns.items']);
+
         return view('customer.orders.show', compact('order'));
     }
 
@@ -36,6 +38,7 @@ class AccountController extends Controller
     public function invoice(Request $request, string $number, InvoiceService $invoices): Response
     {
         $order = $this->ownedOrder($request, $number);
+
         return response($invoices->pdf($order), 200, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'inline; filename="invoice-'.$order->number.'.pdf"',
@@ -47,6 +50,7 @@ class AccountController extends Controller
     {
         $wallet = DB::table('wallets')->where('user_id', $request->user()->id)->first();
         $entries = $wallet ? DB::table('wallet_entries')->where('wallet_id', $wallet->id)->latest('id')->paginate(30) : collect();
+
         return view('customer.wallet', compact('wallet', 'entries'));
     }
 
@@ -73,6 +77,7 @@ class AccountController extends Controller
             Address::query()->where('user_id', $request->user()->id)->update(['is_default' => false]);
         }
         $request->user()->addresses()->create($data);
+
         return back()->with('success', 'آدرس ذخیره شد.');
     }
 
@@ -81,6 +86,7 @@ class AccountController extends Controller
     {
         abort_unless($address->user_id === $request->user()->id, 404);
         $address->delete();
+
         return back()->with('success', 'آدرس حذف شد.');
     }
 
@@ -89,6 +95,7 @@ class AccountController extends Controller
     {
         $notifications = DB::table('notifications')->where('notifiable_type', $request->user()::class)->where('notifiable_id', $request->user()->id)->latest()->paginate(30);
         $preferences = DB::table('notification_preferences')->where('user_id', $request->user()->id)->get()->keyBy('event');
+
         return view('customer.notifications', compact('notifications', 'preferences'));
     }
 
@@ -113,6 +120,7 @@ class AccountController extends Controller
                 'updated_at' => now(),
             ],
         );
+
         return back()->with('success', 'تنظیم اعلان ذخیره شد.');
     }
 
@@ -120,6 +128,7 @@ class AccountController extends Controller
     public function returns(Request $request): View
     {
         $returns = DB::table('returns')->where('user_id', $request->user()->id)->latest()->paginate(30);
+
         return view('customer.returns', compact('returns'));
     }
 
@@ -133,6 +142,7 @@ class AccountController extends Controller
             return back()->withErrors(['items' => 'حداقل یک قلم برای مرجوعی انتخاب کنید.']);
         }
         $returns->request($order, $items, $data['reason'], $request->user()->id);
+
         return back()->with('success', 'درخواست مرجوعی ثبت شد.');
     }
 
@@ -140,6 +150,7 @@ class AccountController extends Controller
     public function tickets(Request $request): View
     {
         $tickets = DB::table('tickets')->where('user_id', $request->user()->id)->latest()->paginate(30);
+
         return view('customer.tickets.index', compact('tickets'));
     }
 
@@ -148,6 +159,7 @@ class AccountController extends Controller
     {
         $data = $request->validate(['subject' => ['required', 'string', 'max:190'], 'message' => ['required', 'string', 'max:5000'], 'department' => ['required', 'in:support,sales,returns,parts'], 'priority' => ['required', 'in:low,normal,high,urgent']]);
         $tickets->open($request->user()->id, $data['subject'], $data['message'], $data['department'], $data['priority']);
+
         return back()->with('success', 'تیکت ثبت شد.');
     }
 
@@ -157,6 +169,7 @@ class AccountController extends Controller
         $ticket = DB::table('tickets')->where('number', $number)->where('user_id', $request->user()->id)->first();
         abort_unless($ticket, 404);
         $messages = DB::table('ticket_messages')->where('ticket_id', $ticket->id)->where('is_internal', false)->orderBy('id')->get();
+
         return view('customer.tickets.show', compact('ticket', 'messages'));
     }
 
@@ -167,6 +180,7 @@ class AccountController extends Controller
         abort_unless($ticket, 404);
         $data = $request->validate(['body' => ['required', 'string', 'max:5000']]);
         $tickets->reply($ticket->id, $request->user()->id, $data['body']);
+
         return back()->with('success', 'پاسخ ثبت شد.');
     }
 
@@ -181,6 +195,7 @@ class AccountController extends Controller
             'receipt' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
         ]);
         $manual->submit($payment, $data, $request->file('receipt'));
+
         return back()->with('success', 'رسید برای بررسی ثبت شد.');
     }
 

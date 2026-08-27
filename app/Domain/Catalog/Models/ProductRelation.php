@@ -8,9 +8,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class ProductRelation extends Model
 {
     public $incrementing = false;
+
     public $timestamps = false;
 
     protected $table = 'product_relations';
+
     protected $guarded = [];
 
     /** Returns the source product for this relation. */

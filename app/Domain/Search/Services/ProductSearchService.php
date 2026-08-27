@@ -3,6 +3,7 @@
 namespace App\Domain\Search\Services;
 
 use App\Domain\Catalog\Models\Product;
+use App\Support\JalaliDate;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -91,7 +92,7 @@ class ProductSearchService
     private function normalize(string $value): string
     {
         $value = str_replace(['ي', 'ك', 'ة', 'ۀ'], ['ی', 'ک', 'ه', 'ه'], $value);
-        $value = app(\App\Support\JalaliDate::class)->latinDigits($value);
+        $value = app(JalaliDate::class)->latinDigits($value);
 
         return trim(preg_replace('/\s+/u', ' ', $value) ?? $value);
     }

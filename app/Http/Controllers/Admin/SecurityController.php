@@ -31,6 +31,7 @@ class SecurityController extends Controller
     {
         $data = $request->validate(['roles' => ['nullable', 'array'], 'roles.*' => ['integer', 'exists:roles,id']]);
         $user->roles()->sync($data['roles'] ?? []);
+
         return back()->with('success', 'نقش‌های کاربر ذخیره شد.');
     }
 
@@ -40,6 +41,7 @@ class SecurityController extends Controller
         $data = $request->validate(['name' => ['required', 'string', 'max:100'], 'slug' => ['nullable', 'string', 'max:100', 'unique:roles,slug'], 'permissions' => ['nullable', 'array'], 'permissions.*' => ['integer', 'exists:permissions,id']]);
         $role = Role::query()->create(['name' => $data['name'], 'slug' => $data['slug'] ?: Str::slug($data['name']), 'is_system' => false]);
         $role->permissions()->sync($data['permissions'] ?? []);
+
         return back()->with('success', 'نقش جدید ایجاد شد.');
     }
 
@@ -48,6 +50,7 @@ class SecurityController extends Controller
     {
         $data = $request->validate(['user_id' => ['nullable', 'exists:users,id'], 'cidr' => ['required', 'string', 'max:64'], 'is_allowed' => ['required', 'boolean'], 'note' => ['nullable', 'string', 'max:300']]);
         DB::table('admin_ip_rules')->insert($data + ['created_at' => now(), 'updated_at' => now()]);
+
         return back()->with('success', 'قانون IP ثبت شد.');
     }
 
@@ -55,6 +58,7 @@ class SecurityController extends Controller
     public function revokeDevice(User $user, int $device): RedirectResponse
     {
         DB::table('user_devices')->where('id', $device)->where('user_id', $user->id)->update(['revoked_at' => now(), 'updated_at' => now()]);
+
         return back()->with('success', 'دستگاه لغو شد.');
     }
 
@@ -62,6 +66,7 @@ class SecurityController extends Controller
     public function resetTwoFactor(User $user): RedirectResponse
     {
         $user->forceFill(['two_factor_secret' => null, 'two_factor_confirmed_at' => null])->save();
+
         return back()->with('success', 'احراز دومرحله‌ای کاربر ریست شد.');
     }
 }

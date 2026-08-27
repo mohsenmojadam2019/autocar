@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class ProductMedia extends Model
 {
     protected $table = 'product_media';
+
     protected $guarded = [];
 
     protected function casts(): array

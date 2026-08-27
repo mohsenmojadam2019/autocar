@@ -17,6 +17,7 @@ class CompareController extends Controller
         $list = $lists->compare($request->user()?->id, $request->session()->get('compare_token'));
         $request->session()->put('compare_token', $list->session_token);
         $list->load(['products.media', 'products.brand', 'products.attributeValues.attribute']);
+
         return view('storefront.compare', compact('list'));
     }
 
@@ -27,6 +28,7 @@ class CompareController extends Controller
         $list = $lists->compare($request->user()?->id, $request->session()->get('compare_token'));
         $request->session()->put('compare_token', $list->session_token);
         $lists->addCompare($list, $product);
+
         return back()->with('success', 'محصول به مقایسه اضافه شد.');
     }
 
@@ -35,6 +37,7 @@ class CompareController extends Controller
     {
         $list = $lists->compare($request->user()?->id, $request->session()->get('compare_token'));
         $lists->removeCompare($list, $product);
+
         return back()->with('success', 'محصول از مقایسه حذف شد.');
     }
 }

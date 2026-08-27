@@ -7,6 +7,7 @@ use App\Domain\Checkout\Services\CheckoutService;
 use App\Domain\Customer\Models\BillingProfile;
 use App\Domain\Order\Models\Order;
 use App\Domain\Payment\Models\PaymentTransaction;
+use App\Domain\Payment\Models\Wallet;
 use App\Domain\Payment\Services\PaymentService;
 use App\Domain\Promotion\Models\Coupon;
 use App\Domain\Shipping\Services\ShippingRateService;
@@ -37,7 +38,7 @@ class CheckoutController extends Controller
             'defaultAddress' => $defaultAddress,
             'shippingRates' => $rates,
             'gateways' => $payments->supportedGateways(),
-            'wallet' => \App\Domain\Payment\Models\Wallet::query()->where('user_id', $request->user()->id)->first(),
+            'wallet' => Wallet::query()->where('user_id', $request->user()->id)->first(),
         ]);
     }
 

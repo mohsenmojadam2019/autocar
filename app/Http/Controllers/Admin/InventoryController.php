@@ -35,6 +35,7 @@ class InventoryController extends Controller
     {
         $data = $request->validate(['delta' => ['required', 'integer', 'not_in:0'], 'reason' => ['required', 'string', 'max:300']]);
         $inventory->adjust($stockItem->id, (int) $data['delta'], $data['reason']);
+
         return back()->with('success', 'اصلاح موجودی ثبت شد.');
     }
 
@@ -55,6 +56,7 @@ class InventoryController extends Controller
             'product_variant_id' => $stock->product_variant_id,
             'quantity' => (int) $data['quantity'],
         ]], $data['note'] ?? null);
+
         return back()->with('success', 'انتقال انبار ثبت شد.');
     }
 
@@ -63,6 +65,7 @@ class InventoryController extends Controller
     {
         $data = $request->validate(['warehouse_id' => ['required', 'exists:warehouses,id'], 'counts' => ['required', 'array', 'min:1'], 'counts.*' => ['required', 'integer', 'min:0'], 'note' => ['nullable', 'string', 'max:1000']]);
         $workflow->count((int) $data['warehouse_id'], $data['counts'], $data['note'] ?? null);
+
         return back()->with('success', 'انبارگردانی ثبت و مغایرت‌ها اصلاح شد.');
     }
 }

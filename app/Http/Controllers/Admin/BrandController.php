@@ -95,6 +95,7 @@ class BrandController extends Controller
         $asset = MediaAsset::query()->where('path', $path)->orWhere('variant_path', $path)->first();
         if ($asset) {
             $media->delete($asset);
+
             return;
         }
         Storage::disk('public')->delete($path);

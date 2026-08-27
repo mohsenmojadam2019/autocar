@@ -61,6 +61,7 @@ class ProviderHealthService
                 return (string) $this->settings->get('payments.zarinpal.merchant_id', '') !== '';
             }
             $base = 'payments.'.$provider.'.';
+
             return (string) $this->settings->get($base.'request_url', '') !== ''
                 && (string) $this->settings->get($base.'verify_url', '') !== ''
                 && (string) $this->settings->get($base.'redirect_url', '') !== ''
@@ -70,6 +71,7 @@ class ProviderHealthService
             return (string) $this->settings->get('sms.kavenegar.api_key', '') !== '';
         }
         $base = 'sms.'.$provider.'.';
+
         return (string) $this->settings->get($base.'send_url', '') !== '' && (string) $this->settings->get($base.'api_key', '') !== '';
     }
 }

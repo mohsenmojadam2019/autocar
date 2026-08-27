@@ -19,6 +19,7 @@ class TrackingController extends Controller
                 return data_get($candidate->shipping_address, 'mobile') === $data['mobile'] || data_get($candidate->billing_address, 'mobile') === $data['mobile'];
             });
         }
+
         return view('storefront.tracking', compact('order'));
     }
 }

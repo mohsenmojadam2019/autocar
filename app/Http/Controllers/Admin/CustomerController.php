@@ -28,6 +28,7 @@ class CustomerController extends Controller
     public function show(User $customer, CustomerMetricsService $metrics): View
     {
         $metrics->rebuild($customer->id);
+
         return view('admin.customers.show', [
             'customer' => $customer->load(['vehicles.trim.generation.model.make', 'addresses']),
             'orders' => DB::table('orders')->where('user_id', $customer->id)->latest()->limit(20)->get(),
@@ -42,6 +43,7 @@ class CustomerController extends Controller
     {
         $data = $request->validate(['note' => ['required', 'string', 'max:3000'], 'is_pinned' => ['nullable', 'boolean']]);
         DB::table('customer_notes')->insert(['user_id' => $customer->id, 'author_id' => $request->user()->id, 'note' => $data['note'], 'is_pinned' => $data['is_pinned'] ?? false, 'created_at' => now(), 'updated_at' => now()]);
+
         return back()->with('success', 'یادداشت CRM ثبت شد.');
     }
 }

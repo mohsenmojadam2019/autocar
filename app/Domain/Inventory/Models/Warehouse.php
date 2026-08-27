@@ -9,8 +9,14 @@ class Warehouse extends Model
 {
     protected $guarded = [];
 
-    protected function casts(): array { return ['is_active' => 'boolean']; }
+    protected function casts(): array
+    {
+        return ['is_active' => 'boolean'];
+    }
 
     /** Returns stock rows managed by this warehouse. */
-    public function stockItems(): HasMany { return $this->hasMany(StockItem::class); }
+    public function stockItems(): HasMany
+    {
+        return $this->hasMany(StockItem::class);
+    }
 }

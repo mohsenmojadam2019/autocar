@@ -15,6 +15,7 @@ class WishlistController extends Controller
     public function index(Request $request, WishlistCompareService $lists): View
     {
         $wishlist = $lists->wishlist($request->user()->id)->load('products.media');
+
         return view('storefront.wishlist', compact('wishlist'));
     }
 
@@ -23,6 +24,7 @@ class WishlistController extends Controller
     {
         abort_unless(Product::query()->published()->whereKey($product->id)->exists(), 404);
         $lists->addWishlist($request->user()->id, $product);
+
         return back()->with('success', 'به علاقه‌مندی‌ها اضافه شد.');
     }
 
@@ -30,6 +32,7 @@ class WishlistController extends Controller
     public function destroy(Request $request, Product $product, WishlistCompareService $lists): RedirectResponse
     {
         $lists->removeWishlist($request->user()->id, $product);
+
         return back()->with('success', 'از علاقه‌مندی‌ها حذف شد.');
     }
 }

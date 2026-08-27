@@ -13,6 +13,7 @@ class RequirePermission
     {
         abort_unless($request->user()?->is_active, 403);
         abort_unless($request->user()?->hasPermission($permission), 403);
+
         return $next($request);
     }
 }

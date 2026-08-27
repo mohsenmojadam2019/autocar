@@ -17,6 +17,7 @@ class SettingsRepository
         }
 
         $value = $setting->is_secret && $setting->value !== null ? Crypt::decryptString($setting->value) : $setting->value;
+
         return $this->cast($value, $setting->type);
     }
 
@@ -35,6 +36,7 @@ class SettingsRepository
             'is_secret' => $secret,
         ]);
         Cache::forget('setting:'.$key);
+
         return $setting;
     }
 

@@ -34,6 +34,7 @@ class LoginController extends Controller
         $user = User::query()->where('email', $data['login'])->orWhere('mobile', $data['login'])->first();
         if (! $user || ! $user->is_active || ! Hash::check($data['password'], $user->password)) {
             RateLimiter::hit($key, 60);
+
             return back()->withErrors(['login' => 'اطلاعات ورود صحیح نیست.'])->onlyInput('login');
         }
 

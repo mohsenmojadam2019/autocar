@@ -11,13 +11,18 @@ class InventoryService
     /** Reserves sellable stock under a row lock to prevent overselling during concurrent checkouts. */
     public function reserve(int $stockItemId, int $quantity, ?string $referenceType = null, ?int $referenceId = null): StockItem
     {
-        if ($quantity < 1) throw new RuntimeException('Reserve quantity must be positive.');
+        if ($quantity < 1) {
+            throw new RuntimeException('Reserve quantity must be positive.');
+        }
 
         return DB::transaction(function () use ($stockItemId, $quantity, $referenceType, $referenceId): StockItem {
             $stock = StockItem::query()->lockForUpdate()->findOrFail($stockItemId);
-            if ($stock->available() < $quantity) throw new RuntimeException('موجودی کافی نیست.');
+            if ($stock->available() < $quantity) {
+                throw new RuntimeException('موجودی کافی نیست.');
+            }
             $stock->increment('reserved', $quantity);
             $this->movement($stock->fresh(), 'reserve', 0, $referenceType, $referenceId, ['reserved_delta' => $quantity]);
+
             return $stock->fresh();
         });
     }
@@ -30,6 +35,7 @@ class InventoryService
             $stock->reserved = max(0, (int) $stock->reserved - max(0, $quantity));
             $stock->save();
             $this->movement($stock, 'release', 0, $referenceType, $referenceId, ['reserved_delta' => -$quantity]);
+
             return $stock->fresh();
         });
     }
@@ -39,11 +45,14 @@ class InventoryService
     {
         return DB::transaction(function () use ($stockItemId, $quantity, $referenceType, $referenceId): StockItem {
             $stock = StockItem::query()->lockForUpdate()->findOrFail($stockItemId);
-            if ($stock->reserved < $quantity || $stock->on_hand < $quantity) throw new RuntimeException('رزرو موجودی نامعتبر است.');
+            if ($stock->reserved < $quantity || $stock->on_hand < $quantity) {
+                throw new RuntimeException('رزرو موجودی نامعتبر است.');
+            }
             $stock->reserved -= $quantity;
             $stock->on_hand -= $quantity;
             $stock->save();
             $this->movement($stock, 'sale', -$quantity, $referenceType, $referenceId);
+
             return $stock->fresh();
         });
     }
@@ -51,12 +60,18 @@ class InventoryService
     /** Applies an audited manual stock adjustment with an explicit reason. */
     public function adjust(int $stockItemId, int $delta, string $reason): StockItem
     {
-        if ($delta === 0 || trim($reason) === '') throw new RuntimeException('برای اصلاح موجودی مقدار و دلیل معتبر لازم است.');
+        if ($delta === 0 || trim($reason) === '') {
+            throw new RuntimeException('برای اصلاح موجودی مقدار و دلیل معتبر لازم است.');
+        }
+
         return DB::transaction(function () use ($stockItemId, $delta, $reason): StockItem {
             $stock = StockItem::query()->lockForUpdate()->findOrFail($stockItemId);
-            if ($stock->on_hand + $delta < 0) throw new RuntimeException('موجودی نمی‌تواند منفی شود.');
+            if ($stock->on_hand + $delta < 0) {
+                throw new RuntimeException('موجودی نمی‌تواند منفی شود.');
+            }
             $stock->increment('on_hand', $delta);
             $this->movement($stock->fresh(), 'adjustment', $delta, null, null, ['reason' => $reason]);
+
             return $stock->fresh();
         });
     }

@@ -41,7 +41,7 @@ class SlugRoutingTest extends TestCase
 
     public function test_models_expose_slug_as_route_key(): void
     {
-        $this->assertSame('slug', (new Product())->getRouteKeyName());
-        $this->assertSame('slug', (new Category())->getRouteKeyName());
+        $this->assertSame('slug', (new Product)->getRouteKeyName());
+        $this->assertSame('slug', (new Category)->getRouteKeyName());
     }
 }

@@ -24,6 +24,7 @@ class WishlistCompareService
     {
         $wishlist = $this->wishlist($userId);
         $wishlist->products()->syncWithoutDetaching([$product->id]);
+
         return $wishlist->fresh('products');
     }
 
@@ -32,6 +33,7 @@ class WishlistCompareService
     {
         $wishlist = $this->wishlist($userId);
         $wishlist->products()->detach($product->id);
+
         return $wishlist->fresh('products');
     }
 
@@ -46,6 +48,7 @@ class WishlistCompareService
             if ($userId !== null && $existing->user_id === null) {
                 $existing->update(['user_id' => $userId]);
             }
+
             return $existing;
         }
 
@@ -63,6 +66,7 @@ class WishlistCompareService
             throw new RuntimeException('حداکثر چهار محصول قابل مقایسه است.');
         }
         $list->products()->syncWithoutDetaching([$product->id]);
+
         return $list->fresh('products');
     }
 
@@ -70,6 +74,7 @@ class WishlistCompareService
     public function removeCompare(CompareList $list, Product $product): CompareList
     {
         $list->products()->detach($product->id);
+
         return $list->fresh('products');
     }
 }

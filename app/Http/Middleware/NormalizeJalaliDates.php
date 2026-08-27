@@ -28,6 +28,7 @@ class NormalizeJalaliDates
         foreach ($input as $key => $value) {
             if (is_array($value)) {
                 $input[$key] = $this->normalizeArray($value);
+
                 continue;
             }
 
