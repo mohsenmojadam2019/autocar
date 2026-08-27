@@ -4,6 +4,7 @@ namespace App\Domain\Catalog\Models;
 
 use App\Domain\Catalog\Enums\AuthenticityType;
 use App\Domain\Catalog\Enums\ProductStatus;
+use App\Domain\Promotion\Services\PricingService;
 use App\Domain\Vehicle\Models\ProductFitment;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -71,10 +72,34 @@ class Product extends Model
         return $this->hasMany(ProductFitment::class);
     }
 
-    /** Returns outgoing related/complementary/alternative/upsell relationships. */
+    /** Returns raw outgoing merchandising relations for admin editing and auditing. */
     public function relations(): HasMany
     {
         return $this->hasMany(ProductRelation::class);
+    }
+
+    /** Returns explicitly curated similar/related products in display order. */
+    public function relatedProducts(): BelongsToMany
+    {
+        return $this->relationByType('related');
+    }
+
+    /** Returns complementary products intended for cross-sell. */
+    public function complementaryProducts(): BelongsToMany
+    {
+        return $this->relationByType('complementary');
+    }
+
+    /** Returns compatible alternatives/substitutes for out-of-stock or choice scenarios. */
+    public function alternativeProducts(): BelongsToMany
+    {
+        return $this->relationByType('alternative');
+    }
+
+    /** Returns higher-value upsell suggestions explicitly curated by catalog managers. */
+    public function upsellProducts(): BelongsToMany
+    {
+        return $this->relationByType('upsell');
     }
 
     /** Limits storefront queries to published and active products. */
@@ -86,9 +111,28 @@ class Product extends Model
                 ->orWhere('published_at', '<=', now()));
     }
 
-    /** Returns the currently effective display price before cart-specific promotions. */
-    public function effectivePrice(): int
+    /** Returns the currently effective unit price after automatic time-based promotions. */
+    public function effectivePrice(?ProductVariant $variant = null, int $quantity = 1): int
     {
-        return (int) $this->sale_price;
+        return (int) app(PricingService::class)->price($this, $variant, $quantity)['final_price'];
+    }
+
+    /** Returns a complete price snapshot for storefront badges, countdowns and immutable cart snapshots. */
+    public function priceSnapshot(?ProductVariant $variant = null, int $quantity = 1): array
+    {
+        return app(PricingService::class)->price($this, $variant, $quantity);
+    }
+
+    /** Builds a typed product-to-product relation without exposing numeric IDs in public routes. */
+    private function relationByType(string $type): BelongsToMany
+    {
+        return $this->belongsToMany(
+            self::class,
+            'product_relations',
+            'product_id',
+            'related_product_id',
+        )->wherePivot('type', $type)
+            ->withPivot(['type', 'position'])
+            ->orderByPivot('position');
     }
 }
