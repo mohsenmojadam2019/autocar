@@ -9,25 +9,37 @@ AutoCar یک فروشگاه حرفه‌ای RTL برای فروش قطعات ی�
 - Laravel 13 / PHP 8.4
 - Blade Components
 - Bootstrap 5 RTL
+- Bootstrap Icons
 - CSS اختصاصی با Design Tokens
-- JavaScript خالص با ES Modules
+- JavaScript خالص بدون Build Step
 - MySQL 8
 - Redis برای Cache، Session، Queue و Rate Limit
 - Laravel Horizon و Scheduler
 - Meilisearch (اختیاری و قابل خاموش‌کردن)
 - Laravel Filesystem روی Local/Public
-- Vite
 - Pest/PHPUnit
 - Docker، Nginx و Supervisor
 
+### Frontend بدون Vite
+
+AutoCar عمداً هیچ Build Step مبتنی بر Node ندارد. نصب و اجرای پروژه به `npm install`، `npm run dev` یا `npm run build` وابسته نیست.
+
+- Bootstrap RTL و Bootstrap Icons مستقیماً توسط Layoutهای Blade بارگذاری می‌شوند.
+- CSS اختصاصی AutoCar از `resources/css/app.css` سرو می‌شود.
+- JavaScript اختصاصی AutoCar از `resources/js/app.js` سرو می‌شود.
+- Assetهای اختصاصی از مسیرهای Cacheable داخلی `/assets/app.css` و `/assets/app.js` در اختیار مرورگر قرار می‌گیرند.
+- فایل‌های `package.json`، `.npmrc` و `vite.config.js` در پروژه وجود ندارند.
+
 ## موارد عمداً استفاده‌نشده
 
+- Vite
+- Node/npm برای Build فرانت‌اند
 - Tailwind CSS
 - Alpine.js
 - Livewire
 - S3 و MinIO
 
-هیچ وابستگی UI یا ذخیره‌سازی نباید این چهار مورد را به پروژه اضافه کند.
+هیچ وابستگی UI یا ذخیره‌سازی نباید موارد بالا را بدون تصمیم معماری جدید به پروژه اضافه کند.
 
 ## اصول معماری
 
@@ -78,6 +90,7 @@ app/
 8. نام متد باید رفتار آن را توضیح دهد؛ از متدهای طولانی و کلاس‌های چندمنظوره جلوگیری می‌شود.
 9. تیک هر تسک فقط بعد از Migration، تست و بررسی دستی ثبت می‌شود.
 10. مسیرهای Storefront، Customer و Admin کاملاً جدا و دارای Middleware مستقل هستند.
+11. Product و Category در URL و Route Model Binding عمومی فقط با `slug` شناسایی می‌شوند؛ ID عددی صرفاً کلید داخلی دیتابیس است.
 
 ## جریان اصلی خرید
 
