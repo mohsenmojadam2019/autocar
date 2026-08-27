@@ -27,7 +27,12 @@ jobs:
           coverage: none
       - run: composer install --no-interaction --prefer-dist
       - run: cp .env.example .env && php artisan key:generate
-      - run: php artisan migrate --force
+      - name: Run migrations
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p storage/logs
+          php artisan migrate --force 2>&1 | tee storage/logs/ci-migrate.log
         env:
           DB_CONNECTION: mysql
           DB_HOST: 127.0.0.1
@@ -35,6 +40,14 @@ jobs:
           DB_DATABASE: autocar_test
           DB_USERNAME: root
           DB_PASSWORD: root
+      - name: Upload migration diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: migration-diagnostics
+          path: storage/logs/ci-migrate.log
+          if-no-files-found: ignore
+          retention-days: 7
       - run: vendor/bin/pint --test
       - run: vendor/bin/phpstan analyse --memory-limit=1G
       - run: php artisan test
