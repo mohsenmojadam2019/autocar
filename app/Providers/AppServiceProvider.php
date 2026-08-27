@@ -11,48 +11,36 @@ use Symfony\Component\HttpFoundation\Response;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /** Registers application services. */
     public function register(): void
     {
         $this->app->singleton(JalaliDate::class);
     }
 
-    /** Registers Jalali presentation, extension routes and framework-free AutoCar asset endpoints. */
     public function boot(): void
     {
-        Blade::stringable(function (CarbonInterface $date): string {
-            return app(JalaliDate::class)->format($date);
-        });
-
+        Blade::stringable(fn (CarbonInterface $date): string => app(JalaliDate::class)->format($date));
         Route::middleware('web')->group(base_path('routes/extensions.php'));
+        Route::middleware('web')->group(base_path('routes/completeness.php'));
 
         Route::middleware('web')->group(function (): void {
-            Route::get('/assets/app.css', function (): Response {
-                $css = (string) file_get_contents(resource_path('css/app.css'));
-                $css = str_replace([
-                    "@import 'bootstrap/dist/css/bootstrap.rtl.min.css';\n",
-                    "@import 'bootstrap-icons/font/bootstrap-icons.css';\n",
-                ], '', $css);
-
-                return response($css, 200, [
-                    'Content-Type' => 'text/css; charset=UTF-8',
-                    'Cache-Control' => 'public, max-age=86400',
-                ]);
-            })->name('assets.css');
-
-            Route::get('/assets/extensions.css', function (): Response {
-                return response((string) file_get_contents(resource_path('css/extensions.css')), 200, [
-                    'Content-Type' => 'text/css; charset=UTF-8',
-                    'Cache-Control' => 'public, max-age=86400',
-                ]);
-            })->name('assets.extensions.css');
-
-            Route::get('/assets/app.js', function (): Response {
-                return response((string) file_get_contents(resource_path('js/app.js')), 200, [
-                    'Content-Type' => 'application/javascript; charset=UTF-8',
-                    'Cache-Control' => 'public, max-age=86400',
-                ]);
-            })->name('assets.js');
+            Route::get('/assets/app.css', fn (): Response => $this->assetResponse(resource_path('css/app.css'), 'text/css; charset=UTF-8'))->name('assets.css');
+            Route::get('/assets/extensions.css', fn (): Response => $this->assetResponse(resource_path('css/extensions.css'), 'text/css; charset=UTF-8'))->name('assets.extensions.css');
+            Route::get('/assets/app.js', fn (): Response => $this->assetResponse(resource_path('js/app.js'), 'application/javascript; charset=UTF-8'))->name('assets.js');
         });
+    }
+
+    /** Serves build-free static assets with validators so browsers avoid needless transfers. */
+    private function assetResponse(string $path, string $contentType): Response
+    {
+        $content = (string) file_get_contents($path);
+        if (str_ends_with($path, 'app.css')) {
+            $content = str_replace(["@import 'bootstrap/dist/css/bootstrap.rtl.min.css';\n", "@import 'bootstrap-icons/font/bootstrap-icons.css';\n"], '', $content);
+        }
+        $etag = '"'.sha1($content).'"';
+        if (request()->header('If-None-Match') === $etag) {
+            return response('', 304, ['ETag' => $etag, 'Cache-Control' => 'public, max-age=86400']);
+        }
+
+        return response($content, 200, ['Content-Type' => $contentType, 'Cache-Control' => 'public, max-age=86400', 'ETag' => $etag]);
     }
 }
