@@ -6,27 +6,33 @@ use App\Domain\Order\Enums\OrderStatus;
 use App\Domain\Order\Models\Order;
 use App\Domain\Order\Services\OrderService;
 use App\Http\Controllers\Controller;
+use App\Support\AdminTable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class OrderController extends Controller
 {
-    /** Lists orders with server-side number/status/customer filters. */
-    public function index(Request $request): View
+    /** Lists orders through the shared bounded server-side table pipeline. */
+    public function index(Request $request, AdminTable $table): View
     {
-        $orders = Order::query()->when($request->filled('q'), fn ($q) => $q->where('number', 'like', '%'.$request->q.'%'))->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))->latest()->paginate(30)->withQueryString();
+        $query = $table->apply(
+            $request,
+            Order::query(),
+            ['number'],
+            ['status' => 'status', 'source' => 'source'],
+            ['id', 'number', 'status', 'source', 'grand_total', 'created_at', 'updated_at'],
+            'id',
+        );
 
-        return view('admin.orders.index', compact('orders'));
+        return view('admin.orders.index', ['orders' => $query->paginate($table->perPage($request))->withQueryString()]);
     }
 
-    /** Shows order snapshots, items and lifecycle history. */
     public function show(Order $order): View
     {
         return view('admin.orders.show', ['order' => $order->load(['items', 'statusHistory'])]);
     }
 
-    /** Applies only a legal order-state transition through the domain state machine. */
     public function transition(Request $request, Order $order, OrderService $service): RedirectResponse
     {
         $data = $request->validate(['status' => ['required', 'string'], 'note' => ['nullable', 'string', 'max:1000']]);
