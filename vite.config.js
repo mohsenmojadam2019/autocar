@@ -7,6 +7,7 @@ export default defineConfig({
             'resources/css/app.css',
             'resources/css/extensions.css',
             'resources/css/ux.css',
+            'resources/css/autocar-theme.css',
             'resources/js/vendor.js',
             'resources/js/app.js',
             'resources/js/ux.js',
