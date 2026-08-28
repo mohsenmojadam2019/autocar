@@ -1,6 +1,6 @@
 @php($cardPrice = $product->priceSnapshot())
 @php($primaryMedia = $product->media->first())
-@php($mediaUrl = $primaryMedia ? (str_starts_with($primaryMedia->path,'demo/') ? asset($primaryMedia->path) : asset('storage/'.$primaryMedia->path)) : null)
+@php($mediaUrl = $primaryMedia ? (str_starts_with($primaryMedia->path,'http://') || str_starts_with($primaryMedia->path,'https://') ? $primaryMedia->path : (str_starts_with($primaryMedia->path,'demo/') ? asset($primaryMedia->path) : asset('storage/'.$primaryMedia->path))) : null)
 <article class="product-card">
     <a class="product-media" href="{{ route('product.show', $product) }}">
         @if($mediaUrl)
