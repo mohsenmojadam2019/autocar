@@ -9,6 +9,7 @@ use App\Domain\Catalog\Models\Category;
 use App\Domain\Catalog\Models\Product;
 use App\Domain\Catalog\Services\ProductCloneService;
 use App\Http\Controllers\Controller;
+use App\Support\AdminTable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -17,24 +18,26 @@ use Illuminate\View\View;
 
 class ProductController extends Controller
 {
-    /** Lists products server-side with bounded search and status filters. */
-    public function index(Request $request): View
+    /** Lists products through the reusable bounded server-side table pipeline. */
+    public function index(Request $request, AdminTable $table): View
     {
-        $query = Product::query()->with('brand')
-            ->when($request->filled('q'), fn ($builder) => $builder->where(fn ($search) => $search
-                ->where('name', 'like', '%'.$request->q.'%')->orWhere('sku', 'like', '%'.$request->q.'%')->orWhere('oem_code', 'like', '%'.$request->q.'%')))
-            ->when($request->filled('status'), fn ($builder) => $builder->where('status', $request->status))->latest();
+        $query = $table->apply(
+            $request,
+            Product::query()->with('brand'),
+            ['name', 'sku', 'oem_code', 'manufacturer_code'],
+            ['status' => 'status'],
+            ['id', 'name', 'sku', 'sale_price', 'status', 'created_at', 'updated_at'],
+            'id',
+        );
 
-        return view('admin.products.index', ['products' => $query->paginate(30)->withQueryString()]);
+        return view('admin.products.index', ['products' => $query->paginate($table->perPage($request))->withQueryString()]);
     }
 
-    /** Shows the create form with reusable taxonomy data. */
     public function create(): View
     {
         return view('admin.products.form', ['product' => new Product, 'brands' => Brand::query()->orderBy('name')->get(), 'categories' => Category::query()->orderBy('name')->get()]);
     }
 
-    /** Stores a product and resolves category membership exclusively from category slugs. */
     public function store(Request $request): RedirectResponse
     {
         $data = $this->validated($request);
@@ -47,7 +50,6 @@ class ProductController extends Controller
         return redirect()->route('admin.products.edit', $product)->with('success', 'محصول ایجاد شد.');
     }
 
-    /** Shows one slug-bound product edit form. */
     public function edit(Product $product): View
     {
         $product->load('categories');
@@ -55,7 +57,6 @@ class ProductController extends Controller
         return view('admin.products.form', ['product' => $product, 'brands' => Brand::query()->orderBy('name')->get(), 'categories' => Category::query()->orderBy('name')->get()]);
     }
 
-    /** Updates a slug-bound product and category membership. */
     public function update(Request $request, Product $product): RedirectResponse
     {
         $data = $this->validated($request, $product->id);
@@ -67,7 +68,6 @@ class ProductController extends Controller
         return back()->with('success', 'محصول ذخیره شد.');
     }
 
-    /** Deep-clones a complete slug-bound product into draft state. */
     public function duplicate(Product $product, ProductCloneService $cloner): RedirectResponse
     {
         $copy = $cloner->clone($product);
@@ -75,35 +75,25 @@ class ProductController extends Controller
         return redirect()->route('admin.products.edit', $copy)->with('success', 'کپی محصول ساخته شد.');
     }
 
-    /** Resolves category slugs to internal foreign keys only inside the persistence boundary. */
     private function syncCategoriesBySlug(Product $product, array $slugs): void
     {
         $ids = Category::query()->whereIn('slug', array_values(array_unique($slugs)))->pluck('id')->all();
         $product->categories()->sync($ids);
     }
 
-    /** Centralizes product validation shared by create and update operations. */
     private function validated(Request $request, ?int $id = null): array
     {
         return $request->validate([
-            'name' => ['required', 'string', 'max:190'],
-            'name_en' => ['nullable', 'string', 'max:190'],
+            'name' => ['required', 'string', 'max:190'], 'name_en' => ['nullable', 'string', 'max:190'],
             'slug' => ['nullable', 'string', 'max:190', Rule::unique('products', 'slug')->ignore($id)],
             'sku' => ['required', 'string', 'max:100', Rule::unique('products', 'sku')->ignore($id)],
-            'oem_code' => ['nullable', 'string', 'max:100'],
-            'manufacturer_code' => ['nullable', 'string', 'max:100'],
-            'brand_id' => ['nullable', 'exists:brands,id'],
-            'authenticity' => ['required', Rule::enum(AuthenticityType::class)],
-            'status' => ['required', Rule::enum(ProductStatus::class)],
-            'summary' => ['nullable', 'string', 'max:1000'],
-            'description' => ['nullable', 'string'],
-            'warranty' => ['nullable', 'string', 'max:190'],
-            'return_days' => ['required', 'integer', 'min:0', 'max:365'],
-            'sale_price' => ['required', 'integer', 'min:0'],
-            'purchase_price' => ['nullable', 'integer', 'min:0'],
-            'compare_at_price' => ['nullable', 'integer', 'min:0'],
-            'wholesale_price' => ['nullable', 'integer', 'min:0'],
-            'categories' => ['nullable', 'array'],
+            'oem_code' => ['nullable', 'string', 'max:100'], 'manufacturer_code' => ['nullable', 'string', 'max:100'],
+            'brand_id' => ['nullable', 'exists:brands,id'], 'authenticity' => ['required', Rule::enum(AuthenticityType::class)],
+            'status' => ['required', Rule::enum(ProductStatus::class)], 'summary' => ['nullable', 'string', 'max:1000'],
+            'description' => ['nullable', 'string'], 'warranty' => ['nullable', 'string', 'max:190'],
+            'return_days' => ['required', 'integer', 'min:0', 'max:365'], 'sale_price' => ['required', 'integer', 'min:0'],
+            'purchase_price' => ['nullable', 'integer', 'min:0'], 'compare_at_price' => ['nullable', 'integer', 'min:0'],
+            'wholesale_price' => ['nullable', 'integer', 'min:0'], 'categories' => ['nullable', 'array'],
             'categories.*' => ['string', 'max:190', 'distinct', 'exists:categories,slug'],
         ]);
     }
