@@ -1,4 +1,3 @@
-@php($viteReady=file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
 <!doctype html>
 <html lang="fa" dir="rtl">
 <head>
@@ -6,15 +5,13 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title','مدیریت اتوکار')</title>
-    @if($viteReady)
-        @vite(['resources/css/app.css','resources/css/extensions.css','resources/css/ux.css','resources/css/autocar-admin.css','resources/js/vendor.js','resources/js/app.js','resources/js/ux.js'])
-    @else
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.rtl.min.css">
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
-        <link rel="stylesheet" href="{{ route('assets.css') }}">
-        <link rel="stylesheet" href="{{ route('assets.extensions.css') }}">
-        <link rel="stylesheet" href="{{ route('assets.autocar-admin.css') }}">
-    @endif
+    <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.rtl.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="{{ route('assets.css') }}">
+    <link rel="stylesheet" href="{{ route('assets.extensions.css') }}">
+    <link rel="stylesheet" href="{{ route('assets.ux.css') }}">
+    <link rel="stylesheet" href="{{ route('assets.autocar-admin.css') }}">
     @stack('head')
 </head>
 <body class="admin-body">
@@ -45,6 +42,8 @@
         </div>
     </main>
 </div>
-@if(!$viteReady)<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" defer></script><script src="{{ route('assets.js') }}" defer></script>@endif
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" defer></script>
+<script src="{{ route('assets.js') }}" defer></script>
+<script src="{{ route('assets.ux.js') }}" defer></script>
 </body>
 </html>

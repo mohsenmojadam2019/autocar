@@ -1,5 +1,4 @@
 @php($siteMenu=app(\App\Domain\Content\Services\MegaMenuService::class)->tree('main','desktop'))
-@php($viteReady=file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
 <!doctype html>
 <html lang="fa" dir="rtl">
 <head>
@@ -8,17 +7,15 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title','اتوکار | فروشگاه تخصصی قطعات خودرو')</title>
     <meta name="description" content="@yield('meta_description','فروش تخصصی قطعات و لوازم یدکی خودرو با جست‌وجوی کد فنی و سازگاری دقیق با خودرو')">
+    <link rel="canonical" href="{{ url()->current() }}">
+    <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
     @include('storefront.partials.structured-data')
-    @if($viteReady)
-        @vite(['resources/css/app.css','resources/css/extensions.css','resources/css/ux.css','resources/css/autocar-theme.css','resources/js/vendor.js','resources/js/app.js','resources/js/ux.js'])
-    @else
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.rtl.min.css">
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
-        <link rel="stylesheet" href="{{ route('assets.css') }}">
-        <link rel="stylesheet" href="{{ route('assets.extensions.css') }}">
-        <link rel="stylesheet" href="{{ route('assets.ux.css') }}">
-        <link rel="stylesheet" href="{{ route('assets.autocar-theme.css') }}">
-    @endif
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.rtl.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="{{ route('assets.css') }}">
+    <link rel="stylesheet" href="{{ route('assets.extensions.css') }}">
+    <link rel="stylesheet" href="{{ route('assets.ux.css') }}">
+    <link rel="stylesheet" href="{{ route('assets.autocar-theme.css') }}">
     @stack('head')
 </head>
 <body class="storefront-body">
@@ -115,10 +112,8 @@
     </div>
 </footer>
 
-@if(!$viteReady)
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" defer></script>
 <script src="{{ route('assets.js') }}" defer></script>
 <script src="{{ route('assets.ux.js') }}" defer></script>
-@endif
 </body>
 </html>

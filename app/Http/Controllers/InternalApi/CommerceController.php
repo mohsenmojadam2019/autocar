@@ -11,6 +11,7 @@ use App\Domain\Order\Models\Order;
 use App\Domain\Vehicle\Models\VehicleTrim;
 use App\Domain\Vehicle\Services\FitmentResolver;
 use App\Http\Controllers\Controller;
+use App\Support\JalaliDate;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -39,7 +40,11 @@ class CommerceController extends Controller
     public function category(Category $category, Request $request): JsonResponse
     {
         abort_unless($category->is_active, 404);
-        $products = $category->products()->published()->orderByDesc('products.id')->paginate(min(50, max(10, (int) $request->input('per_page', 24))));
+        $products = $category->products()
+            ->where('products.status', 'active')
+            ->where(fn ($query) => $query->whereNull('products.published_at')->orWhere('products.published_at', '<=', now()))
+            ->orderByDesc('products.id')
+            ->paginate(min(50, max(10, (int) $request->input('per_page', 24))));
 
         return $this->json($products->getCollection()->map(fn (Product $product) => [
             'slug' => $product->slug, 'name' => $product->name, 'sku' => $product->sku, 'sale_price' => (int) $product->sale_price,
@@ -102,12 +107,16 @@ class CommerceController extends Controller
         ]);
     }
 
-    public function orders(Request $request): JsonResponse
+    public function orders(Request $request, JalaliDate $jalali): JsonResponse
     {
         $orders = Order::query()->where('user_id', $request->user()->id)->latest()->limit(50)->get();
 
         return $this->json($orders->map(fn (Order $order) => [
-            'number' => $order->number, 'status' => $order->status->value, 'grand_total' => (int) $order->grand_total, 'created_at' => $order->created_at?->toIso8601String(),
+            'number' => $order->number,
+            'status' => $order->status->value,
+            'grand_total' => (int) $order->grand_total,
+            'created_at' => $order->created_at?->toIso8601String(),
+            'created_at_jalali' => $order->created_at ? $jalali->format($order->created_at) : null,
         ])->values());
     }
 

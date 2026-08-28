@@ -12,7 +12,6 @@ use App\Domain\Vehicle\Services\FitmentResolver;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use RuntimeException;
 
 it('completes vehicle fitment through cart checkout and stock reservation', function (): void {
     $user = User::factory()->create(['name' => 'مشتری تست']);
@@ -49,7 +48,7 @@ it('completes vehicle fitment through cart checkout and stock reservation', func
     expect($order->status->value)->toBe('pending_payment')
         ->and($order->items()->count())->toBe(1)
         ->and((int) StockItem::query()->findOrFail($stockId)->reserved)->toBe(2)
-        ->and(DB::table('inventory_reservations')->where('order_id', $order->id)->where('status', 'reserved')->sum('quantity'))->toBe(2)
+        ->and((int) DB::table('inventory_reservations')->where('order_id', $order->id)->where('status', 'reserved')->sum('quantity'))->toBe(2)
         ->and($cart->fresh()->status)->toBe('converted');
 });
 
@@ -61,6 +60,6 @@ it('prevents a second reservation from overselling the same locked stock row', f
     $inventory = app(InventoryService::class);
     $inventory->reserve($stockId, 4, 'test', 1);
 
-    expect(fn () => $inventory->reserve($stockId, 2, 'test', 2))->toThrow(RuntimeException::class)
+    expect(fn () => $inventory->reserve($stockId, 2, 'test', 2))->toThrow(\RuntimeException::class)
         ->and((int) StockItem::query()->findOrFail($stockId)->reserved)->toBe(4);
 });

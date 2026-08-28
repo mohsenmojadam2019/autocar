@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+<title id="title">AutoCar automotive parts</title><desc id="desc">Stylized red car with automotive components</desc>
+<defs><linearGradient id="bg" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#f8fafc"/><stop offset="1" stop-color="#e9edf2"/></linearGradient><linearGradient id="car" x1="0" x2="1"><stop stop-color="#bb111b"/><stop offset=".55" stop-color="#e5202b"/><stop offset="1" stop-color="#ff5b64"/></linearGradient></defs>
+<rect width="1200" height="720" rx="44" fill="url(#bg)"/>
+<circle cx="980" cy="126" r="76" fill="#fff" stroke="#d9dee5" stroke-width="10"/><path d="M980 85v82M939 126h82" stroke="#e5202b" stroke-width="18" stroke-linecap="round"/>
+<circle cx="188" cy="150" r="82" fill="#fff" stroke="#d9dee5" stroke-width="10"/><circle cx="188" cy="150" r="38" fill="none" stroke="#222831" stroke-width="13"/><path d="M188 89v30M188 181v30M127 150h30M219 150h30" stroke="#e5202b" stroke-width="11" stroke-linecap="round"/>
+<path d="M225 445c41-94 114-157 214-184 118-32 306-32 431 5 83 24 148 82 185 164l38 15c39 16 58 46 58 88v30H93v-35c0-43 25-72 70-84l62-16Z" fill="url(#car)"/>
+<path d="M383 311c83-55 279-66 420-10 50 20 89 54 118 103H314c18-38 41-69 69-93Z" fill="#1e293b" opacity=".92"/>
+<path d="M493 309v95M746 301v103" stroke="#cbd5e1" stroke-width="8" opacity=".8"/>
+<circle cx="311" cy="555" r="82" fill="#171a1f"/><circle cx="311" cy="555" r="42" fill="#e5e7eb"/><circle cx="311" cy="555" r="14" fill="#6b7280"/>
+<circle cx="921" cy="555" r="82" fill="#171a1f"/><circle cx="921" cy="555" r="42" fill="#e5e7eb"/><circle cx="921" cy="555" r="14" fill="#6b7280"/>
+<path d="M120 585h960" stroke="#cbd5e1" stroke-width="9" stroke-linecap="round" opacity=".7"/>
+<g fill="#fff" opacity=".92"><rect x="153" y="465" width="92" height="34" rx="17"/><rect x="958" y="465" width="92" height="34" rx="17"/></g>
+</svg>
