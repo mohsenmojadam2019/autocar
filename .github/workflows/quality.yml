@@ -25,15 +25,26 @@ jobs:
         with:
           php-version: '8.4'
           coverage: none
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
       - run: composer install --no-interaction --prefer-dist
+      - run: npm install --no-audit --no-fund
       - run: cp .env.example .env && php artisan key:generate
+      - name: Build frontend
+        id: frontend
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p storage/logs
+          npm run build 2>&1 | tee storage/logs/ci-frontend.log
       - name: Run migrations
         id: migrate
         continue-on-error: true
         shell: bash
         run: |
           set -o pipefail
-          mkdir -p storage/logs
           php artisan migrate --force 2>&1 | tee storage/logs/ci-migrate.log
         env:
           DB_CONNECTION: mysql
@@ -82,6 +93,7 @@ jobs:
         if: always()
         shell: bash
         run: |
+          test "${{ steps.frontend.outcome }}" = success
           test "${{ steps.migrate.outcome }}" = success
           test "${{ steps.pint.outcome }}" = success
           test "${{ steps.phpstan.outcome }}" = success
