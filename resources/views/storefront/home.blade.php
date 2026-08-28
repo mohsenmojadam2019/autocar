@@ -21,7 +21,7 @@
                 <button class="btn btn-primary ac-vehicle-submit" type="button" data-vehicle-submit>جست‌وجوی قطعات مناسب <i class="bi bi-search"></i></button>
             </div>
         </div>
-        <div class="ac-hero-art"><img src="{{ asset('demo/hero-autocar.jpg') }}" alt="خودرو و مجموعه‌ای از قطعات یدکی" fetchpriority="high"></div>
+        <div class="ac-hero-art"><img src="{{ asset('demo/hero-autocar.jpg') }}" onerror="this.onerror=null;this.src='https://images.pexels.com/photos/11059359/pexels-photo-11059359.jpeg?auto=compress&amp;cs=tinysrgb&amp;w=1600'" alt="خودرو و مجموعه‌ای از قطعات یدکی" fetchpriority="high"></div>
     </section>
 
     <section class="ac-category-strip" aria-label="دسته‌بندی‌های قطعات">
@@ -55,7 +55,7 @@
 
         <aside class="ac-promo-panel">
             <div class="ac-promo-copy"><span class="ac-promo-label">تخفیف ویژه</span><h3>انواع لاستیک و قطعات مصرفی</h3><strong>تا <span>۲۰٪</span> تخفیف</strong><br><a class="btn btn-primary" href="{{ route('search',['q'=>'لاستیک']) }}">مشاهده و خرید</a></div>
-            <img src="{{ asset('demo/products/tire.jpg') }}" alt="پیشنهاد ویژه لاستیک خودرو" loading="lazy">
+            <img src="{{ asset('demo/products/tire.jpg') }}" onerror="this.onerror=null;this.src='https://images.pexels.com/photos/34357292/pexels-photo-34357292.jpeg?auto=compress&amp;cs=tinysrgb&amp;w=900'" alt="پیشنهاد ویژه لاستیک خودرو" loading="lazy">
         </aside>
     </section>
 
