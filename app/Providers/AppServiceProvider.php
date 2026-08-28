@@ -28,6 +28,7 @@ class AppServiceProvider extends ServiceProvider
 
         Route::middleware('web')->group(base_path('routes/extensions.php'));
         Route::middleware('web')->group(base_path('routes/completeness.php'));
+        Route::middleware('web')->group(base_path('routes/final-features.php'));
 
         Route::middleware('web')->group(function (): void {
             Route::get('/assets/app.css', fn (): Response => $this->assetResponse(resource_path('css/app.css'), 'text/css; charset=UTF-8'))->name('assets.css');
