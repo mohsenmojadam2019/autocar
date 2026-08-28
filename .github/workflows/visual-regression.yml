@@ -1,0 +1,46 @@
+name: visual-regression
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  screenshots:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, pdo_sqlite, fileinfo, gd
+          coverage: none
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: composer install --no-interaction --prefer-dist
+      - run: cp .env.example .env && php artisan key:generate
+      - name: Prepare SQLite fixture
+        run: |
+          touch database/database.sqlite
+          DB_CONNECTION=sqlite DB_DATABASE="$GITHUB_WORKSPACE/database/database.sqlite" php artisan migrate:fresh --seed --force
+      - run: npm install --no-package-lock --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - name: Start AutoCar
+        run: |
+          DB_CONNECTION=sqlite DB_DATABASE="$GITHUB_WORKSPACE/database/database.sqlite" APP_ENV=testing php artisan serve --host=127.0.0.1 --port=8000 > storage/logs/visual-server.log 2>&1 &
+          for i in {1..30}; do curl -fsS http://127.0.0.1:8000/ >/dev/null && exit 0; sleep 1; done
+          cat storage/logs/visual-server.log
+          exit 1
+      - run: npm run visual:test
+      - name: Upload visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: autocar-visual-regression
+          path: |
+            test-results/
+            storage/logs/visual-server.log
+          retention-days: 14
