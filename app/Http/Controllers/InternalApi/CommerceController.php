@@ -13,6 +13,7 @@ use App\Domain\Vehicle\Services\FitmentResolver;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class CommerceController extends Controller
 {
@@ -97,7 +98,7 @@ class CommerceController extends Controller
             'mobile' => $user->mobile,
             'account_type' => $user->account_type,
             'orders_count' => Order::query()->where('user_id', $user->id)->count(),
-            'wallet_balance' => (int) \Illuminate\Support\Facades\DB::table('wallet_entries')->where('user_id', $user->id)->sum('amount'),
+            'wallet_balance' => (int) DB::table('wallet_entries')->where('user_id', $user->id)->sum('amount'),
         ]);
     }
 
