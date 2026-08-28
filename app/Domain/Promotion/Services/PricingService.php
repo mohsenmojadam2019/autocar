@@ -5,11 +5,14 @@ namespace App\Domain\Promotion\Services;
 use App\Domain\Catalog\Models\Product;
 use App\Domain\Catalog\Models\ProductVariant;
 use App\Domain\Promotion\Models\AutomaticPromotion;
+use App\Services\Settings\SettingsRepository;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 
 class PricingService
 {
+    public function __construct(private readonly SettingsRepository $settings) {}
+
     /** Returns authoritative retail/B2B pricing and chooses the best permitted active price. */
     public function price(Product $product, ?ProductVariant $variant = null, int $quantity = 1, ?int $userId = null, bool $resolveAuthenticatedUser = true): array
     {
@@ -47,7 +50,7 @@ class PricingService
 
         $wholesale = $userId ? DB::table('wholesale_accounts')->where('user_id', $userId)->where('status', 'approved')->first() : null;
         if ($wholesale) {
-            $contractBase = ! $variant && $product->wholesale_price ? (int) $product->wholesale_price : $basePrice;
+            $contractBase = (int) ($variant?->wholesale_price ?? $product->wholesale_price ?? $basePrice);
             $candidate = max(0, (int) round($contractBase * (1 - ((int) $wholesale->discount_percent / 100))));
             if ($candidate < $finalPrice) {
                 $finalPrice = $candidate;
@@ -56,6 +59,7 @@ class PricingService
             }
         }
 
+        $finalPrice = $this->roundPrice($finalPrice);
         $discountAmount = max(0, $basePrice - $finalPrice);
         $discountPercent = $basePrice > 0 ? (int) round(($discountAmount / $basePrice) * 100) : 0;
 
@@ -72,6 +76,7 @@ class PricingService
             'ends_at' => $winner?->ends_at,
             'pricing_tier' => $tier,
             'wholesale_account_id' => $wholesale?->id,
+            'rounding_step' => max(1, (int) $this->settings->get('pricing.rounding_step', 1)),
         ];
     }
 
@@ -89,5 +94,23 @@ class PricingService
         }
 
         return max(0, $basePrice - max(0, $discount));
+    }
+
+    /** Applies centrally configured Iranian price rounding after all discount/B2B rules. */
+    private function roundPrice(int $price): int
+    {
+        $step = max(1, (int) $this->settings->get('pricing.rounding_step', 1));
+        if ($step === 1 || $price === 0) {
+            return max(0, $price);
+        }
+
+        $ratio = $price / $step;
+        $rounded = match ((string) $this->settings->get('pricing.rounding_mode', 'nearest')) {
+            'up' => (int) ceil($ratio) * $step,
+            'down' => (int) floor($ratio) * $step,
+            default => (int) round($ratio) * $step,
+        };
+
+        return max(0, $rounded);
     }
 }
