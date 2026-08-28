@@ -10,29 +10,47 @@ use RuntimeException;
 
 class FulfillmentService
 {
-    public function __construct(private readonly OrderService $orders) {}
+    public function __construct(
+        private readonly OrderService $orders,
+        private readonly ShippingProviderManager $providers,
+    ) {}
 
-    /** Creates the shipment record and a first tracking event for a paid/ready order. */
+    /** Creates a local/provider shipment record and first immutable tracking event for an eligible order. */
     public function createShipment(Order $order, ?int $shippingMethodId, ?string $carrier, ?string $trackingCode, int $cost = 0, ?int $weightGrams = null): int
     {
         if (! in_array($order->status->value, ['paid', 'reviewing', 'sourcing', 'ready_to_ship'], true)) {
             throw new RuntimeException('سفارش در وضعیت قابل ارسال نیست.');
         }
 
-        return DB::transaction(function () use ($order, $shippingMethodId, $carrier, $trackingCode, $cost, $weightGrams): int {
+        $method = $shippingMethodId ? DB::table('shipping_methods')->find($shippingMethodId) : null;
+        $providerName = strtolower((string) ($carrier ?: $method?->code ?: 'courier'));
+        $providerName = in_array($providerName, ShippingProviderManager::PROVIDERS, true) ? $providerName : 'courier';
+        $providerData = $this->providers->driver($providerName)->createShipment($order, [
+            'tracking_code' => $trackingCode,
+            'weight_grams' => $weightGrams,
+            'shipping_method' => $method?->code,
+        ]);
+        $resolvedTracking = $providerData['tracking_code'] ?? $trackingCode;
+
+        return DB::transaction(function () use ($order, $shippingMethodId, $providerName, $resolvedTracking, $cost, $weightGrams, $providerData): int {
             $id = DB::table('shipments')->insertGetId([
                 'order_id' => $order->id,
                 'shipping_method_id' => $shippingMethodId,
-                'status' => 'preparing',
-                'carrier' => $carrier,
-                'tracking_code' => $trackingCode,
+                'status' => (string) ($providerData['status'] ?? 'preparing'),
+                'carrier' => $providerName,
+                'tracking_code' => $resolvedTracking,
                 'cost' => $cost,
                 'weight_grams' => $weightGrams,
-                'label_data' => json_encode(['order_number' => $order->number], JSON_UNESCAPED_UNICODE),
+                'label_data' => json_encode([
+                    'order_number' => $order->number,
+                    'label_url' => $providerData['label_url'] ?? null,
+                    'provider' => $providerData['provider'] ?? $providerName,
+                    'provider_payload' => $providerData['payload'] ?? null,
+                ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
-            $this->event($id, 'preparing', null, 'مرسوله ایجاد شد.');
+            $this->event($id, 'preparing', null, 'مرسوله ایجاد شد.', $providerData['payload'] ?? null);
             if ($order->status !== OrderStatus::ReadyToShip && $order->status->canTransitionTo(OrderStatus::ReadyToShip)) {
                 $this->orders->transition($order, OrderStatus::ReadyToShip, 'مرسوله آماده شد.');
             }
@@ -41,10 +59,29 @@ class FulfillmentService
         });
     }
 
-    /** Appends tracking state and synchronizes shipment/order lifecycle. */
-    public function updateStatus(int $shipmentId, string $status, ?string $location = null, ?string $description = null, ?string $trackingCode = null): void
+    /** Pulls current status from the configured carrier adapter and applies it to shipment/order state. */
+    public function syncProviderStatus(int $shipmentId): void
     {
-        DB::transaction(function () use ($shipmentId, $status, $location, $description, $trackingCode): void {
+        $shipment = DB::table('shipments')->find($shipmentId);
+        if (! $shipment || ! $shipment->tracking_code || ! in_array($shipment->carrier, ShippingProviderManager::PROVIDERS, true)) {
+            throw new RuntimeException('مرسوله دارای Provider/Tracking معتبر نیست.');
+        }
+
+        $tracking = $this->providers->driver($shipment->carrier)->track($shipment->tracking_code);
+        $this->updateStatus(
+            $shipmentId,
+            $this->normalizeStatus((string) ($tracking['status'] ?? 'in_transit')),
+            $tracking['location'] ?? null,
+            $tracking['description'] ?? null,
+            $shipment->tracking_code,
+            $tracking['payload'] ?? null,
+        );
+    }
+
+    /** Appends tracking state and synchronizes shipment/order lifecycle. */
+    public function updateStatus(int $shipmentId, string $status, ?string $location = null, ?string $description = null, ?string $trackingCode = null, ?array $providerPayload = null): void
+    {
+        DB::transaction(function () use ($shipmentId, $status, $location, $description, $trackingCode, $providerPayload): void {
             $shipment = DB::table('shipments')->where('id', $shipmentId)->lockForUpdate()->first();
             if (! $shipment) {
                 throw new RuntimeException('مرسوله یافت نشد.');
@@ -60,11 +97,11 @@ class FulfillmentService
                 $updates['delivered_at'] = now();
             }
             DB::table('shipments')->where('id', $shipmentId)->update($updates);
-            $this->event($shipmentId, $status, $location, $description);
+            $this->event($shipmentId, $status, $location, $description, $providerPayload);
 
             $order = Order::query()->findOrFail($shipment->order_id);
             $target = match ($status) {
-                'shipped' => OrderStatus::Shipped,
+                'shipped', 'in_transit' => OrderStatus::Shipped,
                 'delivered' => OrderStatus::Delivered,
                 default => null,
             };
@@ -74,15 +111,28 @@ class FulfillmentService
         });
     }
 
-    /** Stores an immutable shipment tracking event. */
-    private function event(int $shipmentId, string $status, ?string $location, ?string $description): void
+    private function normalizeStatus(string $status): string
+    {
+        return match (strtolower($status)) {
+            'created', 'pending', 'preparing' => 'preparing',
+            'sent', 'shipped' => 'shipped',
+            'transit', 'in_transit', 'on_the_way' => 'in_transit',
+            'delivered', 'completed' => 'delivered',
+            'returned', 'return' => 'returned',
+            'failed', 'cancelled', 'canceled' => 'failed',
+            default => 'in_transit',
+        };
+    }
+
+    /** Stores an immutable shipment tracking event including normalized provider payload. */
+    private function event(int $shipmentId, string $status, ?string $location, ?string $description, ?array $providerPayload = null): void
     {
         DB::table('shipment_events')->insert([
             'shipment_id' => $shipmentId,
             'status' => $status,
             'location' => $location,
             'description' => $description,
-            'provider_payload' => null,
+            'provider_payload' => $providerPayload ? json_encode($providerPayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : null,
             'occurred_at' => now(),
             'created_at' => now(),
             'updated_at' => now(),
