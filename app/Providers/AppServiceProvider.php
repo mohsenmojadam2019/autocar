@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use App\Domain\Catalog\Models\Product;
+use App\Domain\Catalog\Models\ProductVariant;
+use App\Domain\Promotion\Services\PriceHistoryService;
 use App\Support\JalaliDate;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\Blade;
@@ -19,6 +22,10 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Blade::stringable(fn (CarbonInterface $date): string => app(JalaliDate::class)->format($date));
+
+        Product::updated(fn (Product $product) => app(PriceHistoryService::class)->capture($product));
+        ProductVariant::updated(fn (ProductVariant $variant) => app(PriceHistoryService::class)->capture($variant));
+
         Route::middleware('web')->group(base_path('routes/extensions.php'));
         Route::middleware('web')->group(base_path('routes/completeness.php'));
 
