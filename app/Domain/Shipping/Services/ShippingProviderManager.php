@@ -21,12 +21,12 @@ class ShippingProviderManager
         }
 
         return new ConfigurableShippingProvider($provider, [
-            'mode' => $this->settings->get("shipping.providers.{$provider}.mode", in_array($provider, ['courier', 'pickup'], true) ? 'manual' : 'manual'),
+            'mode' => $this->settings->get("shipping.providers.{$provider}.mode", 'manual'),
             'base_url' => $this->settings->get("shipping.providers.{$provider}.base_url"),
             'create_endpoint' => $this->settings->get("shipping.providers.{$provider}.create_endpoint"),
             'track_endpoint' => $this->settings->get("shipping.providers.{$provider}.track_endpoint"),
-            'token' => $this->settings->getSecret("shipping.providers.{$provider}.token"),
-            'api_key' => $this->settings->getSecret("shipping.providers.{$provider}.api_key"),
+            'token' => $this->settings->get("shipping.providers.{$provider}.token"),
+            'api_key' => $this->settings->get("shipping.providers.{$provider}.api_key"),
             'api_key_header' => $this->settings->get("shipping.providers.{$provider}.api_key_header", 'X-API-Key'),
             'tracking_path' => $this->settings->get("shipping.providers.{$provider}.tracking_path", 'tracking_code'),
             'label_path' => $this->settings->get("shipping.providers.{$provider}.label_path", 'label_url'),
