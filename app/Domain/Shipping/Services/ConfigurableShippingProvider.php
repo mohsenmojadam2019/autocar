@@ -4,6 +4,7 @@ namespace App\Domain\Shipping\Services;
 
 use App\Domain\Order\Models\Order;
 use App\Domain\Shipping\Contracts\ShippingProvider;
+use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
@@ -76,7 +77,7 @@ class ConfigurableShippingProvider implements ShippingProvider
         ];
     }
 
-    private function request(): \Illuminate\Http\Client\PendingRequest
+    private function request(): PendingRequest
     {
         $request = Http::acceptJson()->asJson()->timeout((int) ($this->config['timeout'] ?? 15))->retry(2, 250, throw: false);
         if ($token = ($this->config['token'] ?? null)) {
