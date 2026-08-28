@@ -30,9 +30,15 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - name: Start AutoCar
         run: |
-          DB_CONNECTION=sqlite DB_DATABASE="$GITHUB_WORKSPACE/database/database.sqlite" APP_ENV=testing php artisan serve --host=127.0.0.1 --port=8000 > storage/logs/visual-server.log 2>&1 &
-          for i in {1..30}; do curl -fsS http://127.0.0.1:8000/ >/dev/null && exit 0; sleep 1; done
-          cat storage/logs/visual-server.log
+          DB_CONNECTION=sqlite DB_DATABASE="$GITHUB_WORKSPACE/database/database.sqlite" APP_ENV=testing APP_DEBUG=true php artisan serve --host=127.0.0.1 --port=8000 > storage/logs/visual-server.log 2>&1 &
+          for i in {1..30}; do
+            code=$(curl -sS -o storage/logs/visual-home.html -w '%{http_code}' http://127.0.0.1:8000/ || true)
+            [ "$code" = "200" ] && exit 0
+            sleep 1
+          done
+          cat storage/logs/visual-server.log || true
+          cat storage/logs/laravel.log || true
+          cat storage/logs/visual-home.html || true
           exit 1
       - run: npm run visual:test
       - name: Upload visual evidence
@@ -43,4 +49,6 @@ jobs:
           path: |
             test-results/
             storage/logs/visual-server.log
+            storage/logs/laravel.log
+            storage/logs/visual-home.html
           retention-days: 14
