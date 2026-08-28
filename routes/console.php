@@ -27,6 +27,7 @@ Artisan::command('autocar:backup', function (BackupService $backups): void {
 Artisan::command('autocar:restore {path}', function (string $path, BackupService $backups): void {
     if (app()->environment('production') && ! $this->confirm('This replaces application data from the selected backup. Continue?')) {
         $this->warn('Restore cancelled.');
+
         return;
     }
 
