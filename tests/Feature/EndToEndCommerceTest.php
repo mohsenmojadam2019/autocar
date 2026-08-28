@@ -60,6 +60,6 @@ it('prevents a second reservation from overselling the same locked stock row', f
     $inventory = app(InventoryService::class);
     $inventory->reserve($stockId, 4, 'test', 1);
 
-    expect(fn () => $inventory->reserve($stockId, 2, 'test', 2))->toThrow(RuntimeException::class)
+    expect(fn () => $inventory->reserve($stockId, 2, 'test', 2))->toThrow(\RuntimeException::class)
         ->and((int) StockItem::query()->findOrFail($stockId)->reserved)->toBe(4);
 });
