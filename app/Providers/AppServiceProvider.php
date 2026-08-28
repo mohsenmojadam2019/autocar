@@ -35,6 +35,7 @@ class AppServiceProvider extends ServiceProvider
             Route::get('/assets/extensions.css', fn (): Response => $this->assetResponse(resource_path('css/extensions.css'), 'text/css; charset=UTF-8'))->name('assets.extensions.css');
             Route::get('/assets/ux.css', fn (): Response => $this->assetResponse(resource_path('css/ux.css'), 'text/css; charset=UTF-8'))->name('assets.ux.css');
             Route::get('/assets/autocar-theme.css', fn (): Response => $this->assetResponse(resource_path('css/autocar-theme.css'), 'text/css; charset=UTF-8'))->name('assets.autocar-theme.css');
+            Route::get('/assets/autocar-admin.css', fn (): Response => $this->assetResponse(resource_path('css/autocar-admin.css'), 'text/css; charset=UTF-8'))->name('assets.autocar-admin.css');
             Route::get('/assets/app.js', fn (): Response => $this->assetResponse(resource_path('js/app.js'), 'application/javascript; charset=UTF-8'))->name('assets.js');
             Route::get('/assets/ux.js', fn (): Response => $this->assetResponse(resource_path('js/ux.js'), 'application/javascript; charset=UTF-8'))->name('assets.ux.js');
         });
