@@ -1,6 +1,50 @@
 @php($viteReady=file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
-<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="csrf-token" content="{{ csrf_token() }}"><title>@yield('title','مدیریت اتوکار')</title>@if($viteReady)@vite(['resources/css/app.css','resources/css/extensions.css','resources/css/ux.css','resources/js/vendor.js','resources/js/app.js','resources/js/ux.js'])@else<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.rtl.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"><link rel="stylesheet" href="{{ route('assets.css') }}"><link rel="stylesheet" href="{{ route('assets.extensions.css') }}">@endif</head><body class="admin-body"><div class="admin-shell"><aside class="admin-sidebar" data-admin-sidebar><a class="ac-brand admin-logo" href="{{ route('admin.dashboard') }}">AUTO<span>CAR</span></a><div class="sidebar-caption">مدیریت فروشگاه</div><nav>
-@foreach([
-['admin.dashboard','admin.dashboard','bi-speedometer2','داشبورد'],['admin.orders.index','admin.orders.*','bi-box-seam','سفارش‌ها'],['admin.products.index','admin.products.*','bi-grid','محصولات'],['admin.categories.index','admin.categories.*','bi-diagram-3','دسته‌بندی‌ها'],['admin.brands.index','admin.brands.*','bi-award','برندها'],['admin.vehicles.index','admin.vehicles.*','bi-car-front','خودرو و سازگاری'],['admin.inventory.index','admin.inventory.*','bi-boxes','انبار'],['admin.procurement.index','admin.procurement.*','bi-truck','تأمین و سفارش خرید'],['admin.shipping.index','admin.shipping.*','bi-send','ارسال و Fulfillment'],['admin.rma.index','admin.rma.*','bi-arrow-counterclockwise','RMA و بازپرداخت'],['admin.catalog-operations.index','admin.catalog-operations.*','bi-filetype-csv','ورود/خروج کالا'],['admin.customers.index','admin.customers.*','bi-people','مشتریان و CRM'],['admin.wholesale.index','admin.wholesale.*','bi-building','فروش عمده B2B'],['admin.promotions.index','admin.promotions.*','bi-percent','تخفیف و کوپن'],['admin.marketing.index','admin.marketing.*','bi-megaphone','کمپین'],['admin.sms.index','admin.sms.*','bi-chat-square-text','پیامک'],['admin.payments.index','admin.payments.*','bi-credit-card','پرداخت‌ها'],['admin.support.index','admin.support.*','bi-headset','پشتیبانی'],['admin.editorial.index','admin.editorial.*','bi-file-earmark-text','محتوا و بلاگ'],['admin.banners.index','admin.banners.*','bi-images','بنرها'],['admin.moderation.index','admin.moderation.*','bi-chat-square-check','نظرات و پرسش‌ها'],['admin.search-seo.index','admin.search-seo.*','bi-search','جست‌وجو و SEO'],['admin.menu.index','admin.menu.*','bi-menu-button-wide','مگامنو'],['admin.reports.index','admin.reports.*','bi-bar-chart','گزارش‌ها'],['admin.providers.index','admin.providers.*','bi-plug','Providerها'],['admin.operations-health.index','admin.operations-health.*','bi-activity','عملیات و سلامت'],['admin.security.index','admin.security.*','bi-shield-lock','امنیت و دسترسی'],['admin.settings.index','admin.settings.*','bi-gear','تنظیمات']
-] as $nav)<a @class(['active'=>request()->routeIs($nav[1])]) href="{{ route($nav[0]) }}"><i class="bi {{ $nav[2] }}"></i> {{ $nav[3] }}</a>@endforeach
-</nav></aside><main class="admin-main"><header class="admin-topbar"><button class="admin-menu-btn" data-admin-menu aria-label="باز و بسته کردن منو"><i class="bi bi-list"></i></button><div><small>پنل مدیریت</small><b>@yield('page_title','AutoCar')</b></div><div class="admin-user"><i class="bi bi-bell"></i><span>{{ auth()->user()->name }}</span><a href="{{ route('account.2fa.setup') }}" title="2FA"><i class="bi bi-shield-check"></i></a><a href="{{ route('home') }}" target="_blank" title="مشاهده فروشگاه"><i class="bi bi-box-arrow-up-left"></i></a></div></header><div class="admin-content"><nav class="admin-breadcrumb mb-3" aria-label="breadcrumb"><a href="{{ route('admin.dashboard') }}">داشبورد</a><span>/</span><span>@yield('page_title','AutoCar')</span></nav>@if(session('success'))<div class="alert alert-success" role="status">{{ session('success') }}</div>@endif @if($errors->any())<div class="alert alert-danger" role="alert"><ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif @yield('content')</div></main></div>@if(!$viteReady)<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" defer></script><script src="{{ route('assets.js') }}" defer></script>@endif</body></html>
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>@yield('title','مدیریت اتوکار')</title>
+    @if($viteReady)
+        @vite(['resources/css/app.css','resources/css/extensions.css','resources/css/ux.css','resources/css/autocar-admin.css','resources/js/vendor.js','resources/js/app.js','resources/js/ux.js'])
+    @else
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.rtl.min.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+        <link rel="stylesheet" href="{{ route('assets.css') }}">
+        <link rel="stylesheet" href="{{ route('assets.extensions.css') }}">
+        <link rel="stylesheet" href="{{ route('assets.autocar-admin.css') }}">
+    @endif
+    @stack('head')
+</head>
+<body class="admin-body">
+<div class="admin-shell">
+    <aside class="admin-sidebar" data-admin-sidebar>
+        <a class="ac-brand admin-logo" href="{{ route('admin.dashboard') }}">AUTO<span>CAR</span></a>
+        <div class="sidebar-caption">مدیریت فروشگاه</div>
+        <nav>
+            @foreach([
+            ['admin.dashboard','admin.dashboard','bi-speedometer2','داشبورد'],['admin.orders.index','admin.orders.*','bi-box-seam','سفارش‌ها'],['admin.products.index','admin.products.*','bi-grid','محصولات'],['admin.categories.index','admin.categories.*','bi-diagram-3','دسته‌بندی‌ها'],['admin.brands.index','admin.brands.*','bi-award','برندها'],['admin.vehicles.index','admin.vehicles.*','bi-car-front','خودرو و سازگاری'],['admin.inventory.index','admin.inventory.*','bi-boxes','انبار'],['admin.procurement.index','admin.procurement.*','bi-truck','تأمین و سفارش خرید'],['admin.shipping.index','admin.shipping.*','bi-send','ارسال و Fulfillment'],['admin.rma.index','admin.rma.*','bi-arrow-counterclockwise','RMA و بازپرداخت'],['admin.catalog-operations.index','admin.catalog-operations.*','bi-filetype-csv','ورود/خروج کالا'],['admin.customers.index','admin.customers.*','bi-people','مشتریان و CRM'],['admin.wholesale.index','admin.wholesale.*','bi-building','فروش عمده B2B'],['admin.promotions.index','admin.promotions.*','bi-percent','تخفیف و کوپن'],['admin.marketing.index','admin.marketing.*','bi-megaphone','کمپین'],['admin.sms.index','admin.sms.*','bi-chat-square-text','پیامک'],['admin.payments.index','admin.payments.*','bi-credit-card','پرداخت‌ها'],['admin.support.index','admin.support.*','bi-headset','پشتیبانی'],['admin.editorial.index','admin.editorial.*','bi-file-earmark-text','محتوا و بلاگ'],['admin.banners.index','admin.banners.*','bi-images','بنرها'],['admin.moderation.index','admin.moderation.*','bi-chat-square-check','نظرات و پرسش‌ها'],['admin.search-seo.index','admin.search-seo.*','bi-search','جست‌وجو و SEO'],['admin.menu.index','admin.menu.*','bi-menu-button-wide','مگامنو'],['admin.reports.index','admin.reports.*','bi-bar-chart','گزارش‌ها'],['admin.providers.index','admin.providers.*','bi-plug','Providerها'],['admin.operations-health.index','admin.operations-health.*','bi-activity','عملیات و سلامت'],['admin.security.index','admin.security.*','bi-shield-lock','امنیت و دسترسی'],['admin.settings.index','admin.settings.*','bi-gear','تنظیمات']
+            ] as $nav)
+                <a @class(['active'=>request()->routeIs($nav[1])]) href="{{ route($nav[0]) }}"><i class="bi {{ $nav[2] }}"></i> {{ $nav[3] }}</a>
+            @endforeach
+        </nav>
+    </aside>
+
+    <main class="admin-main">
+        <header class="admin-topbar">
+            <button class="admin-menu-btn" data-admin-menu aria-label="باز و بسته کردن منو"><i class="bi bi-list"></i></button>
+            <div><small>پنل مدیریت اتوکار</small><b>@yield('page_title','AutoCar')</b></div>
+            <div class="admin-user"><i class="bi bi-bell"></i><span>{{ auth()->user()->name }}</span><a href="{{ route('account.2fa.setup') }}" title="2FA"><i class="bi bi-shield-check"></i></a><a href="{{ route('home') }}" target="_blank" title="مشاهده فروشگاه"><i class="bi bi-box-arrow-up-left"></i></a></div>
+        </header>
+        <div class="admin-content">
+            <nav class="admin-breadcrumb mb-3" aria-label="breadcrumb"><a href="{{ route('admin.dashboard') }}">داشبورد</a><span>/</span><span>@yield('page_title','AutoCar')</span></nav>
+            @if(session('success'))<div class="alert alert-success" role="status">{{ session('success') }}</div>@endif
+            @if($errors->any())<div class="alert alert-danger" role="alert"><ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
+            @yield('content')
+        </div>
+    </main>
+</div>
+@if(!$viteReady)<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" defer></script><script src="{{ route('assets.js') }}" defer></script>@endif
+</body>
+</html>
