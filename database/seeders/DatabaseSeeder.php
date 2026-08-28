@@ -14,7 +14,12 @@ class DatabaseSeeder extends Seeder
     /** Seeds deterministic development data without embedding production credentials. */
     public function run(): void
     {
-        $this->call([AccessControlSeeder::class, CatalogSeeder::class, VehicleSeeder::class]);
+        $this->call([
+            AccessControlSeeder::class,
+            CatalogSeeder::class,
+            VehicleSeeder::class,
+            StorefrontDemoSeeder::class,
+        ]);
 
         $admin = User::factory()->create([
             'name' => 'AutoCar Admin',
