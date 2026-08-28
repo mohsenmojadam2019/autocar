@@ -1,0 +1,10 @@
+{
+  "name": "autocar-quality-ui",
+  "private": true,
+  "scripts": {
+    "visual:test": "playwright test -c playwright.config.js"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0"
+  }
+}
