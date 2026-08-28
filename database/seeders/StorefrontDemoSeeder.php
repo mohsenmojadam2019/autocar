@@ -7,9 +7,7 @@ use App\Domain\Catalog\Models\Category;
 use App\Domain\Catalog\Models\Product;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
-use Throwable;
 
 class StorefrontDemoSeeder extends Seeder
 {
@@ -37,9 +35,7 @@ class StorefrontDemoSeeder extends Seeder
 
         $seeded = collect();
         foreach ($products as $index => $data) {
-            $imageUrl = sprintf('https://images.pexels.com/photos/%1$d/pexels-photo-%1$d.jpeg?auto=compress&cs=tinysrgb&w=900', $data['image']);
-            $relative = 'demo/products/'.Str::slug($data['sku']).'.jpg';
-            $mediaPath = $this->cachePublicImage($imageUrl, $relative);
+            $mediaPath = sprintf('https://images.pexels.com/photos/%1$d/pexels-photo-%1$d.jpeg?auto=compress&cs=tinysrgb&w=900', $data['image']);
 
             $product = Product::query()->updateOrCreate(
                 ['sku' => $data['sku']],
@@ -80,7 +76,7 @@ class StorefrontDemoSeeder extends Seeder
             $seeded->push($product);
         }
 
-        if ($seeded->count() >= 5) {
+        if ($seeded->count() >= 6) {
             foreach ($seeded->take(5) as $position => $product) {
                 if ($product->id !== $seeded[5]->id) {
                     DB::table('product_relations')->updateOrInsert(
@@ -94,23 +90,24 @@ class StorefrontDemoSeeder extends Seeder
         $promotionId = DB::table('automatic_promotions')->where('slug', 'demo-weekly-offer')->value('id');
         if (! $promotionId) {
             $promotionId = DB::table('automatic_promotions')->insertGetId([
-                'name' => 'پیشنهاد ویژه اتوکار', 'slug' => 'demo-weekly-offer', 'discount_type' => 'percentage', 'discount_value' => 8,
-                'minimum_quantity' => 1, 'badge_text' => '۸٪ تخفیف', 'priority' => 50, 'is_active' => true, 'stackable' => false,
-                'starts_at' => now()->subDay(), 'ends_at' => now()->addDays(14), 'created_at' => now(), 'updated_at' => now(),
+                'name' => 'پیشنهاد ویژه اتوکار',
+                'slug' => 'demo-weekly-offer',
+                'discount_type' => 'percentage',
+                'discount_value' => 8,
+                'minimum_quantity' => 1,
+                'badge_text' => '۸٪ تخفیف',
+                'priority' => 50,
+                'is_active' => true,
+                'stackable' => false,
+                'starts_at' => now()->subDay(),
+                'ends_at' => now()->addDays(14),
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
         }
         foreach ($seeded->take(5) as $product) {
             DB::table('automatic_promotion_product')->updateOrInsert(['automatic_promotion_id' => $promotionId, 'product_id' => $product->id]);
         }
-
-        $this->cachePublicImage(
-            'https://images.pexels.com/photos/11059359/pexels-photo-11059359.jpeg?auto=compress&cs=tinysrgb&w=1600',
-            'demo/hero-autocar.jpg',
-        );
-        $this->cachePublicImage(
-            'https://images.pexels.com/photos/34357292/pexels-photo-34357292.jpeg?auto=compress&cs=tinysrgb&w=900',
-            'demo/products/tire.jpg',
-        );
     }
 
     /** @return array<string, Category> */
@@ -140,9 +137,17 @@ class StorefrontDemoSeeder extends Seeder
     private function brands(): array
     {
         $definitions = [
-            'bosch' => ['Bosch', 'DE'], 'valeo' => ['Valeo', 'FR'], 'mann-filter' => ['Mann Filter', 'DE'], 'mobil-1' => ['Mobil 1', 'US'],
-            'mahle' => ['Mahle', 'DE'], 'ngk' => ['NGK', 'JP'], 'gates' => ['Gates', 'US'], 'tokico' => ['Tokico', 'JP'],
-            'hi-q' => ['Hi-Q', 'KR'], 'brembo' => ['Brembo', 'IT'], 'genuine-parts' => ['Genuine Parts', null],
+            'bosch' => ['Bosch', 'DE'],
+            'valeo' => ['Valeo', 'FR'],
+            'mann-filter' => ['Mann Filter', 'DE'],
+            'mobil-1' => ['Mobil 1', 'US'],
+            'mahle' => ['Mahle', 'DE'],
+            'ngk' => ['NGK', 'JP'],
+            'gates' => ['Gates', 'US'],
+            'tokico' => ['Tokico', 'JP'],
+            'hi-q' => ['Hi-Q', 'KR'],
+            'brembo' => ['Brembo', 'IT'],
+            'genuine-parts' => ['Genuine Parts', null],
         ];
 
         $items = [];
@@ -155,28 +160,11 @@ class StorefrontDemoSeeder extends Seeder
 
     private function warehouse(): int
     {
-        DB::table('warehouses')->updateOrInsert(['code' => 'MAIN'], ['name' => 'انبار مرکزی اتوکار', 'city' => 'تهران', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('warehouses')->updateOrInsert(
+            ['code' => 'MAIN'],
+            ['name' => 'انبار مرکزی اتوکار', 'city' => 'تهران', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
+        );
 
         return (int) DB::table('warehouses')->where('code', 'MAIN')->value('id');
-    }
-
-    private function cachePublicImage(string $url, string $relativePath): string
-    {
-        try {
-            $response = Http::timeout(10)->retry(1, 200)->get($url);
-            if ($response->successful() && str_starts_with((string) $response->header('Content-Type'), 'image/')) {
-                $absolute = public_path($relativePath);
-                if (! is_dir(dirname($absolute))) {
-                    mkdir(dirname($absolute), 0775, true);
-                }
-                file_put_contents($absolute, $response->body());
-
-                return $relativePath;
-            }
-        } catch (Throwable) {
-            // Network is optional for deterministic database seeding; the storefront can render the remote URL directly.
-        }
-
-        return $url;
     }
 }
