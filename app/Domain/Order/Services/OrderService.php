@@ -5,14 +5,18 @@ namespace App\Domain\Order\Services;
 use App\Domain\Notification\Services\OrderNotificationService;
 use App\Domain\Order\Enums\OrderStatus;
 use App\Domain\Order\Models\Order;
+use App\Domain\Payment\Services\CashbackService;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
 class OrderService
 {
-    public function __construct(private readonly OrderNotificationService $notifications) {}
+    public function __construct(
+        private readonly OrderNotificationService $notifications,
+        private readonly CashbackService $cashback,
+    ) {}
 
-    /** Transitions an order through its state machine, writes history and emits customer notifications after commit. */
+    /** Transitions an order through its state machine, writes history and emits post-commit side effects exactly once. */
     public function transition(Order $order, OrderStatus $next, ?string $note = null): Order
     {
         $current = $order->status;
@@ -39,7 +43,13 @@ class OrderService
 
             return $order->fresh(['items', 'statusHistory', 'user']);
         });
-        DB::afterCommit(fn () => $this->notifications->statusChanged($updated, $next));
+
+        DB::afterCommit(function () use ($updated, $next): void {
+            $this->notifications->statusChanged($updated, $next);
+            if ($next === OrderStatus::Paid) {
+                $this->cashback->grant($updated);
+            }
+        });
 
         return $updated;
     }
