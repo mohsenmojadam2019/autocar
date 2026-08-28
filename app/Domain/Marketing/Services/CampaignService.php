@@ -11,20 +11,29 @@ class CampaignService
 {
     public function __construct(private readonly SmsService $sms) {}
 
-    /** Materializes recipients only from active users with explicit SMS marketing consent. */
+    /** Materializes recipients only from active, consented and non-suppressed users. */
     public function buildRecipients(int $campaignId): int
     {
         $campaign = DB::table('sms_campaigns')->find($campaignId);
         if (! $campaign) {
             throw new RuntimeException('کمپین یافت نشد.');
         }
+
         $query = DB::table('users')
             ->join('marketing_consents', function ($join): void {
                 $join->on('marketing_consents.user_id', '=', 'users.id')
                     ->where('marketing_consents.channel', 'sms')
                     ->where('marketing_consents.granted', true);
             })
-            ->whereNotNull('users.mobile')->where('users.is_active', true)->select('users.id', 'users.mobile');
+            ->whereNotNull('users.mobile')
+            ->where('users.is_active', true)
+            ->whereNotExists(function ($subquery): void {
+                $subquery->selectRaw('1')
+                    ->from('marketing_suppressions')
+                    ->where('marketing_suppressions.channel', 'sms')
+                    ->whereColumn('marketing_suppressions.value', 'users.mobile');
+            })
+            ->select('users.id', 'users.mobile');
 
         if ($campaign->segment_id) {
             $rules = json_decode(DB::table('customer_segments')->where('id', $campaign->segment_id)->value('rules') ?? '[]', true) ?: [];
@@ -54,7 +63,7 @@ class CampaignService
         DB::table('sms_campaigns')->where('id', $campaignId)->update(['status' => 'stopped', 'finished_at' => now(), 'updated_at' => now()]);
     }
 
-    /** Processes due campaigns once per minute while respecting consent, stop state and configured rate. */
+    /** Processes due campaigns while rechecking consent, suppression, stop state and configured rate before each message. */
     public function processDue(): int
     {
         $campaigns = DB::table('sms_campaigns')
@@ -84,20 +93,26 @@ class CampaignService
                 if ($freshStatus === 'stopped') {
                     break;
                 }
+
+                if (DB::table('marketing_suppressions')->where('channel', 'sms')->where('value', $recipient->mobile)->exists()) {
+                    DB::table('sms_campaign_recipients')->where('id', $recipient->id)->update(['status' => 'suppressed', 'updated_at' => now()]);
+                    continue;
+                }
+
                 $consented = $recipient->user_id
                     ? DB::table('marketing_consents')->where('user_id', $recipient->user_id)->where('channel', 'sms')->where('granted', true)->exists()
                     : false;
                 if (! $consented) {
                     DB::table('sms_campaign_recipients')->where('id', $recipient->id)->update(['status' => 'skipped_no_consent', 'updated_at' => now()]);
-
                     continue;
                 }
+
                 try {
                     $messageId = $this->sms->send($recipient->mobile, $campaign->message, $recipient->user_id, 'campaign');
                     DB::table('sms_campaign_recipients')->where('id', $recipient->id)->update(['status' => 'sent', 'sms_message_id' => $messageId, 'updated_at' => now()]);
                     DB::table('sms_campaigns')->where('id', $campaign->id)->increment('sent_count');
                     $sent++;
-                } catch (Throwable $exception) {
+                } catch (Throwable) {
                     DB::table('sms_campaign_recipients')->where('id', $recipient->id)->update(['status' => 'failed', 'updated_at' => now()]);
                     DB::table('sms_campaigns')->where('id', $campaign->id)->increment('failed_count');
                 }
