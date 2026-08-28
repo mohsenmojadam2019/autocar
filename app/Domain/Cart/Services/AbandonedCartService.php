@@ -24,6 +24,7 @@ class AbandonedCartService
                 $count++;
             }
         });
+
         return $count;
     }
 
@@ -38,6 +39,7 @@ class AbandonedCartService
         foreach ($rows as $row) {
             if (DB::table('marketing_suppressions')->where('channel', 'sms')->where('value', $row->mobile)->exists()) {
                 DB::table('cart_recoveries')->where('id', $row->id)->update(['status' => 'suppressed', 'updated_at' => now()]);
+
                 continue;
             }
             $url = route('cart.recover', ['token' => $row->token]);
@@ -45,6 +47,7 @@ class AbandonedCartService
             DB::table('cart_recoveries')->where('id', $row->id)->update(['status' => 'sent', 'sent_at' => now(), 'updated_at' => now()]);
             $sent++;
         }
+
         return $sent;
     }
 
@@ -53,6 +56,7 @@ class AbandonedCartService
         $recovery = DB::table('cart_recoveries')->where('token', $token)->firstOrFail();
         $cart = Cart::query()->whereKey($recovery->cart_id)->where('user_id', $userId)->where('status', 'active')->firstOrFail();
         DB::table('cart_recoveries')->where('id', $recovery->id)->update(['status' => 'recovered', 'recovered_at' => now(), 'updated_at' => now()]);
+
         return $cart;
     }
 }
