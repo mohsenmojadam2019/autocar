@@ -10,14 +10,14 @@ async function assertHealthyPage(page, path, testInfo) {
   expect(response && response.ok()).toBeTruthy();
   await expect(page.locator('body')).toBeVisible();
 
-  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-  expect(overflow).toBeLessThanOrEqual(2);
-  expect(consoleErrors).toEqual([]);
-
   await page.screenshot({
     path: testInfo.outputPath(`${testInfo.project.name}-${path === '/' ? 'home' : path.replaceAll('/', '-')}.png`),
     fullPage: true
   });
+
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(2);
+  expect(consoleErrors).toEqual([]);
 }
 
 test('storefront visual smoke', async ({ page }, testInfo) => {
