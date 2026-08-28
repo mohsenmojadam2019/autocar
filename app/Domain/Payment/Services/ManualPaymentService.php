@@ -7,7 +7,6 @@ use App\Domain\Order\Services\OrderService;
 use App\Domain\Payment\Models\PaymentTransaction;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 
 class ManualPaymentService
@@ -44,7 +43,13 @@ class ManualPaymentService
             if (! $proof || $proof->status !== 'pending') {
                 throw new RuntimeException('رسید قابل تأیید نیست.');
             }
-            $transaction = PaymentTransaction::query()->lockForUpdate()->findOrFail($proof->payment_transaction_id);
+
+            /** @var PaymentTransaction $transaction */
+            $transaction = PaymentTransaction::query()
+                ->whereKey($proof->payment_transaction_id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
             if ($transaction->status !== 'verified') {
                 $transaction->update([
                     'status' => 'verified',

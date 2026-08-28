@@ -2,8 +2,10 @@
 
 namespace App\Domain\Catalog\Services;
 
+use App\Domain\Catalog\Enums\ProductStatus;
 use App\Domain\Catalog\Models\Product;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Collection;
 
 class ProductRecommendationService
@@ -11,8 +13,7 @@ class ProductRecommendationService
     /** Returns curated similar products first, then safely fills remaining slots from shared categories and brand. */
     public function similar(Product $product, int $limit = 8): Collection
     {
-        $curated = $product->relatedProducts()
-            ->published()
+        $curated = $this->publishedRelation($product->relatedProducts())
             ->with(['brand', 'media'])
             ->limit($limit)
             ->get();
@@ -23,8 +24,7 @@ class ProductRecommendationService
     /** Returns explicitly curated complementary products for cross-sell blocks and cart suggestions. */
     public function complementary(Product $product, int $limit = 8): Collection
     {
-        return $product->complementaryProducts()
-            ->published()
+        return $this->publishedRelation($product->complementaryProducts())
             ->with(['brand', 'media'])
             ->limit($limit)
             ->get();
@@ -33,8 +33,7 @@ class ProductRecommendationService
     /** Returns explicitly curated compatible alternatives, useful when stock or price differs. */
     public function alternatives(Product $product, int $limit = 8): Collection
     {
-        return $product->alternativeProducts()
-            ->published()
+        return $this->publishedRelation($product->alternativeProducts())
             ->with(['brand', 'media'])
             ->limit($limit)
             ->get();
@@ -43,11 +42,20 @@ class ProductRecommendationService
     /** Returns explicitly curated upsell products intended to increase order value without replacing fitment validation. */
     public function upsells(Product $product, int $limit = 8): Collection
     {
-        return $product->upsellProducts()
-            ->published()
+        return $this->publishedRelation($product->upsellProducts())
             ->with(['brand', 'media'])
             ->limit($limit)
             ->get();
+    }
+
+    /** Applies the same publication contract used by Product::published() to a many-to-many relation. */
+    private function publishedRelation(BelongsToMany $relation): BelongsToMany
+    {
+        return $relation
+            ->where('products.status', ProductStatus::Active->value)
+            ->where(fn ($query) => $query
+                ->whereNull('products.published_at')
+                ->orWhere('products.published_at', '<=', now()));
     }
 
     /** Completes a curated list with same-category/brand products while preventing duplicates and self references. */

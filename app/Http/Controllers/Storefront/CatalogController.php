@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Storefront;
 
+use App\Domain\Catalog\Enums\ProductStatus;
 use App\Domain\Catalog\Models\Brand;
 use App\Domain\Catalog\Models\Category;
 use App\Domain\Catalog\Models\Product;
@@ -22,7 +23,12 @@ class CatalogController extends Controller
     public function category(Request $request, Category $category): View
     {
         abort_unless($category->is_active, 404);
-        $query = $category->products()->published()->with(['brand', 'media']);
+        $query = $category->products()
+            ->where('products.status', ProductStatus::Active->value)
+            ->where(fn ($builder) => $builder
+                ->whereNull('products.published_at')
+                ->orWhere('products.published_at', '<=', now()))
+            ->with(['brand', 'media']);
         $this->applyFilters($query, $request);
 
         return view('storefront.catalog.index', ['title' => $category->name, 'category' => $category, 'products' => $query->paginate(24)->withQueryString(), 'brands' => Brand::query()->visible()->orderBy('name')->get(), 'breadcrumbs' => $category->breadcrumb()]);

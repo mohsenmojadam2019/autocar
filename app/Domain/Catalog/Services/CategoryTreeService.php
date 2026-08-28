@@ -35,16 +35,23 @@ class CategoryTreeService
                 'position' => max(0, $position),
             ]);
 
-            $this->recalculateDescendantDepths($category->fresh());
+            $fresh = $category->fresh();
+            if (! $fresh) {
+                throw new InvalidArgumentException('Category could not be reloaded after move.');
+            }
+            $this->recalculateDescendantDepths($fresh);
 
-            return $category->fresh();
+            return $fresh;
         });
     }
 
     /** Loads descendants recursively without imposing an artificial category depth limit. */
     private function loadDescendants(Category $category, bool $onlyVisible): void
     {
-        $children = $category->children();
+        $children = Category::query()
+            ->where('parent_id', $category->getKey())
+            ->orderBy('position');
+
         if ($onlyVisible) {
             $children->visible();
         }
@@ -62,10 +69,11 @@ class CategoryTreeService
             if ((int) $cursor->parent_id === (int) $ancestor->getKey()) {
                 return true;
             }
-            $cursor = $cursor->parent()->first();
-            if (! $cursor) {
+            $parent = $cursor->parent()->first();
+            if (! $parent instanceof Category) {
                 break;
             }
+            $cursor = $parent;
         }
 
         return false;
@@ -74,7 +82,7 @@ class CategoryTreeService
     /** Recalculates depth values after a branch is moved in the category tree. */
     private function recalculateDescendantDepths(Category $category): void
     {
-        foreach ($category->children()->get() as $child) {
+        foreach (Category::query()->where('parent_id', $category->getKey())->get() as $child) {
             $child->update(['depth' => $category->depth + 1]);
             $this->recalculateDescendantDepths($child);
         }
