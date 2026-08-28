@@ -96,6 +96,7 @@ class CampaignService
 
                 if (DB::table('marketing_suppressions')->where('channel', 'sms')->where('value', $recipient->mobile)->exists()) {
                     DB::table('sms_campaign_recipients')->where('id', $recipient->id)->update(['status' => 'suppressed', 'updated_at' => now()]);
+
                     continue;
                 }
 
@@ -104,6 +105,7 @@ class CampaignService
                     : false;
                 if (! $consented) {
                     DB::table('sms_campaign_recipients')->where('id', $recipient->id)->update(['status' => 'skipped_no_consent', 'updated_at' => now()]);
+
                     continue;
                 }
 
