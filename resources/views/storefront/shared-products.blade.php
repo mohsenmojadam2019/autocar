@@ -1,0 +1,1 @@
+@extends('layouts.storefront') @section('title',$title.' | اتوکار') @section('content')<div class="container py-5"><h1 class="h3 mb-4">{{ $title }}</h1><div class="product-grid">@forelse($products as $product)@include('storefront.partials.product-card',['product'=>$product])@empty<div class="empty-state">این لیست خالی است.</div>@endforelse</div></div>@endsection
