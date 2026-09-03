@@ -23,7 +23,7 @@ jobs:
           --health-timeout=5s
           --health-retries=10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
@@ -71,7 +71,7 @@ jobs:
           php artisan test 2>&1 | tee storage/logs/ci-tests.log
       - name: Upload quality diagnostics
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: quality-diagnostics
           path: storage/logs/ci-*.log
